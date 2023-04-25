@@ -22,8 +22,8 @@ playerX_change = 0
 enemy_img = pygame.image.load('ghost(1).png')
 enemyX = random.randint(100, 600)
 enemyY = random.randint(64, 128)
-enemyX_change = 0
-
+enemyX_change = 0.3
+enemyY_change = 40
 
 def player(x, y):
     screen.blit(player_img, (x, y))
@@ -53,11 +53,21 @@ while running:
             if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                 playerX_change = 0
 
+    # Checking for player boundaries
     playerX += playerX_change
     if playerX <= 0:
         playerX = 0
     elif playerX >= 636:
         playerX = 636
+
+    # Enemy movement
+    enemyX += enemyX_change
+    if enemyX <= 0:
+        enemyX_change += 0.3
+        enemyY += enemyY_change
+    elif enemyX >= 636:
+        enemyX_change -= 0.3
+        enemyY += enemyY_change
 
     player(playerX, playerY)
     enemy(enemyX, enemyY)
