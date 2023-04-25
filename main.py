@@ -1,4 +1,5 @@
 import pygame
+import random
 
 # Initialize pygame
 pygame.init()
@@ -12,14 +13,24 @@ icon = pygame.image.load('icon.png')
 pygame.display.set_icon(icon)
 
 # Player
-playerImg = pygame.image.load('spaceship.png')
+player_img = pygame.image.load('spaceship.png')
 playerX = 310
 playerY = 500
 playerX_change = 0
 
+# Enemy
+enemy_img = pygame.image.load('ghost(1).png')
+enemyX = random.randint(100, 600)
+enemyY = random.randint(64, 128)
+enemyX_change = 0
+
 
 def player(x, y):
-    screen.blit(playerImg, (x, y))
+    screen.blit(player_img, (x, y))
+
+
+def enemy(x, y):
+    screen.blit(enemy_img, (x, y))
 
 
 # Game Loop
@@ -49,4 +60,6 @@ while running:
         playerX = 636
 
     player(playerX, playerY)
+    enemy(enemyX, enemyY)
+
     pygame.display.update()
