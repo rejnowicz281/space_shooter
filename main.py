@@ -1,5 +1,6 @@
-import pygame
 import random
+
+import pygame
 
 # Initialize pygame
 pygame.init()
@@ -28,6 +29,14 @@ enemyY = random.randint(64, 128)
 enemyX_change = 0.3
 enemyY_change = 40
 
+# Bullet
+bullet_img = pygame.image.load('bullet.png')
+bulletX = 0
+bulletY = 0
+bulletY_change = 0
+bullet_state = "ready"
+
+
 def player(x, y):
     screen.blit(player_img, (x, y))
 
@@ -36,13 +45,17 @@ def enemy(x, y):
     screen.blit(enemy_img, (x, y))
 
 
+def bullet(x, y):
+    screen.blit(bullet_img, (x, y))
+
+
 # Game Loop
 running = True
 while running:
 
     screen.fill((82, 100, 150))
     # Background
-    screen.blit(background, (0,0))
+    screen.blit(background, (0, 0))
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -54,6 +67,11 @@ while running:
                 playerX_change = -0.5
             elif event.key == pygame.K_RIGHT:
                 playerX_change = 0.5
+            elif event.key == pygame.K_SPACE and bullet_state == "ready":
+                bulletY_change = -2
+                bulletX = playerX + 16
+                bulletY = playerY - 32
+                bullet_state = "fired"
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                 playerX_change = 0
@@ -73,6 +91,13 @@ while running:
     elif enemyX >= 636:
         enemyX_change -= 0.3
         enemyY += enemyY_change
+
+    # Bullet behaviour if fired
+    if bullet_state == "fired":
+        bullet(bulletX, bulletY)
+        bulletY += bulletY_change
+    if bulletY <= -32:
+        bullet_state = "ready"
 
     player(playerX, playerY)
     enemy(enemyX, enemyY)
