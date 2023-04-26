@@ -5,6 +5,8 @@ import pygame
 # Initialize pygame
 pygame.init()
 
+score = 0
+
 # Create screen
 screen = pygame.display.set_mode((700, 700))
 
@@ -47,6 +49,10 @@ def enemy(x, y):
 
 def bullet(x, y):
     screen.blit(bullet_img, (x, y))
+
+
+def is_collision(bullet_x, bullet_y, enemy_x, enemy_y):
+    return bullet_y < (enemy_y + 48) and (enemy_x - 16) < bullet_x < (enemy_x + 48)
 
 
 # Game Loop
@@ -96,6 +102,12 @@ while running:
     if bullet_state == "fired":
         bullet(bulletX, bulletY)
         bulletY += bulletY_change
+        if is_collision(bulletX, bulletY, enemyX, enemyY):
+            bullet_state = "ready"
+            score += 1
+            enemyX = random.randint(100, 600)
+            enemyY = random.randint(64, 128)
+            print(score)
     if bulletY <= -32:
         bullet_state = "ready"
 
