@@ -5,7 +5,18 @@ import pygame
 # Initialize pygame
 pygame.init()
 
-score = 0
+# Score
+
+score_value = 0
+font = pygame.font.Font('freesansbold.ttf', 32)
+textX = 10
+textY = 10
+
+
+def show_score(x, y):
+    score = font.render("Score: " + str(score_value), True, (255, 255, 255))
+    screen.blit(score, (x, y))
+
 
 # Create screen
 screen = pygame.display.set_mode((700, 700))
@@ -28,8 +39,8 @@ playerX_change = 0
 enemy_img = pygame.image.load('ghost(1).png')
 enemyX = random.randint(100, 600)
 enemyY = random.randint(64, 128)
-enemyX_change = 0.3
-enemyY_change = 40
+enemyX_change = 1
+enemyY_change = 30
 
 # Bullet
 bullet_img = pygame.image.load('bullet.png')
@@ -70,9 +81,9 @@ while running:
         # if pressing arrows, move left or right
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                playerX_change = -0.5
+                playerX_change = -1
             elif event.key == pygame.K_RIGHT:
-                playerX_change = 0.5
+                playerX_change = 1
             elif event.key == pygame.K_SPACE and bullet_state == "ready":
                 bulletY_change = -2
                 bulletX = playerX + 16
@@ -92,10 +103,10 @@ while running:
     # Enemy movement
     enemyX += enemyX_change
     if enemyX <= 0:
-        enemyX_change += 0.3
+        enemyX_change += 0.5
         enemyY += enemyY_change
     elif enemyX >= 636:
-        enemyX_change -= 0.3
+        enemyX_change -= 0.5
         enemyY += enemyY_change
 
     # Bullet behaviour if fired
@@ -104,14 +115,14 @@ while running:
         bulletY += bulletY_change
         if is_collision(bulletX, bulletY, enemyX, enemyY):
             bullet_state = "ready"
-            score += 1
+            score_value += 1
             enemyX = random.randint(100, 600)
             enemyY = random.randint(64, 128)
-            print(score)
+            print(score_value)
     if bulletY <= -32:
         bullet_state = "ready"
 
     player(playerX, playerY)
     enemy(enemyX, enemyY)
-
+    show_score(textX, textY)
     pygame.display.update()
