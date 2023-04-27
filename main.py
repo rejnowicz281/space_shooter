@@ -1,3 +1,4 @@
+import os
 import random
 
 import pygame
@@ -51,9 +52,16 @@ playerX_change = 0
 
 # Enemies
 enemies = []
+
+
+def get_random_enemy_image():
+    enemy_images = os.listdir("Enemies")
+    return pygame.image.load(f"Enemies/{random.choice(enemy_images)}")
+
+
 for i in range(5):
     enemy = {
-        "img": pygame.image.load('ghost(1).png'),
+        "img": get_random_enemy_image(),
         "x": random.randint(100, 600),
         "y": random.randint(64, 128),
         "x_change": 1,
@@ -143,6 +151,7 @@ while running:
         bulletY += bulletY_change
         for enemy in enemies:
             if is_collision(bulletX, bulletY, enemy["x"], enemy["y"]):
+                enemy["img"] = get_random_enemy_image()
                 mixer.Sound('explosion.wav').play()
                 bullet_state = "ready"
                 score_value += 1
