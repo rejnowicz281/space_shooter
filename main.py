@@ -21,13 +21,28 @@ mixer.music.play(-1)
 
 score_value = 0
 score_font = pygame.font.Font('freesansbold.ttf', 32)
-score_x = 10
-score_y = 10
+score_x = 30
+score_y = 30
 
 
 def show_score(x, y):
     score = score_font.render("Score: " + str(score_value), True, (255, 255, 255))
     screen.blit(score, (x, y))
+
+
+# Highest Score
+try:
+    with open("high_score.txt", "r") as file:
+        high_score_value = int(file.read())
+except FileNotFoundError:
+    high_score_value = 0
+high_score_x = 10
+high_score_y = 10
+
+
+def show_high_score(x, y):
+    high_score = score_font.render("High score: " + str(high_score_value), True, (255, 255, 255))
+    screen.blit(high_score, (x, y))
 
 
 # Game Over
@@ -116,7 +131,7 @@ while running:
             elif event.key == pygame.K_RIGHT:
                 player["x_change"] = 1
             elif event.key == pygame.K_SPACE and bullet_state == "ready":
-                bulletY_change = -2
+                bulletY_change = -5
                 bulletX = player["x"] + 16
                 bulletY = player["y"] - 32
                 bullet_state = "fired"
@@ -147,9 +162,14 @@ while running:
 
         # Game Over
         if enemy["y"] > 500:
+            # Save high score
+            with open("high_score.txt", "w") as file:
+                file.write(str(high_score_value))
+
             # Make sure all enemies disappear
             for enemy_b in enemies:
                 enemy_b["y"] = 2000
+
             show_game_over()
 
     # Bullet behaviour if fired
@@ -165,6 +185,7 @@ while running:
                 mixer.Sound('explosion.wav').play()
                 bullet_state = "ready"
                 score_value += 1
+                high_score_value = score_value if score_value > high_score_value else high_score_value
                 enemy["x"] = random.randint(100, 600)
                 enemy["y"] = random.randint(64, 128)
                 print(score_value)
@@ -175,4 +196,5 @@ while running:
     draw_player(player["x"], player["y"])
 
     show_score(score_x, score_y)
+    show_high_score(high_score_x, high_score_y)
     pygame.display.update()
