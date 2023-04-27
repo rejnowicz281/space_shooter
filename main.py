@@ -45,10 +45,12 @@ icon = pygame.image.load('icon.png')
 pygame.display.set_icon(icon)
 
 # Player
-player_img = pygame.image.load('spaceship.png')
-playerX = 310
-playerY = 500
-playerX_change = 0
+player = {
+    "img": pygame.image.load('spaceship.png'),
+    "x": 310,
+    "y": 500,
+    "x_change": 0
+}
 
 # Enemies
 enemies = []
@@ -78,7 +80,7 @@ bullet_state = "ready"
 
 
 def draw_player(x, y):
-    screen.blit(player_img, (x, y))
+    screen.blit(player["img"], (x, y))
 
 
 def draw_enemy(enemy_img, x, y):
@@ -108,25 +110,25 @@ while running:
         # if pressing arrows, move left or right
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                playerX_change = -1
+                player["x_change"] = -1
             elif event.key == pygame.K_RIGHT:
-                playerX_change = 1
+                player["x_change"] = 1
             elif event.key == pygame.K_SPACE and bullet_state == "ready":
                 bulletY_change = -2
-                bulletX = playerX + 16
-                bulletY = playerY - 32
+                bulletX = player["x"] + 16
+                bulletY = player["y"] - 32
                 bullet_state = "fired"
                 mixer.Sound('laser.wav').play()
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                playerX_change = 0
+                player["x_change"] = 0
 
     # Checking for player boundaries
-    playerX += playerX_change
-    if playerX <= 0:
-        playerX = 0
-    elif playerX >= 636:
-        playerX = 636
+    player["x"] += player["x_change"]
+    if player["x"] <= 0:
+        player["x"] = 0
+    elif player["x"] >= 636:
+        player["x"] = 636
 
     for enemy in enemies:
         # Spawn enemies
@@ -162,7 +164,7 @@ while running:
         bullet_state = "ready"
 
     # Spawn player
-    draw_player(playerX, playerY)
+    draw_player(player["x"], player["y"])
 
     show_score(score_x, score_y)
     pygame.display.update()
