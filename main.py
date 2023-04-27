@@ -21,8 +21,8 @@ mixer.music.play(-1)
 
 score_value = 0
 score_font = pygame.font.Font('freesansbold.ttf', 32)
-score_x = 30
-score_y = 30
+score_x = 10
+score_y = 50
 
 
 def show_score(x, y):
