@@ -67,7 +67,9 @@ for i in range(5):
         "x": random.randint(100, 600),
         "y": random.randint(64, 128),
         "x_change": 1,
-        "y_change": 100
+        "y_change": 100,
+        "fade_in_speed": 5,
+        "alpha": 0
     }
     enemies.append(enemy)
 
@@ -132,7 +134,10 @@ while running:
 
     for enemy in enemies:
         # Spawn enemies
+        enemy["img"].set_alpha(enemy["alpha"])
         draw_enemy(enemy["img"], enemy["x"], enemy["y"])
+        if enemy["alpha"] < 255:
+            enemy["alpha"] += enemy["fade_in_speed"]
 
         # Enemy movement
         enemy["x"] += enemy["x_change"]
@@ -154,6 +159,9 @@ while running:
         for enemy in enemies:
             if is_collision(bulletX, bulletY, enemy["x"], enemy["y"]):
                 enemy["img"] = get_random_enemy_image()
+                enemy["alpha"] = 0
+                draw_enemy(enemy["img"], enemy["x"], enemy["y"])
+
                 mixer.Sound('explosion.wav').play()
                 bullet_state = "ready"
                 score_value += 1
