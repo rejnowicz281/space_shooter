@@ -75,6 +75,13 @@ class Bullet:
     def move(self):
         self.y -= self.speed
 
+    def update(self):
+        if self.fired and self.y > -self.img.get_height():  # If bullet is fired and is not off-screen
+            self.move()
+            self.draw()
+        else:
+            self.fired = False
+
 
 class Enemy:
     FADE_IN_SPEED = 15
@@ -140,12 +147,10 @@ class Game:
                 enemy.explode()
                 self.player.bullet.fired = False
                 self.increase_score()
-            elif self.player.bullet.y <= 0 - self.player.bullet.img.get_height():  # Check if bullet goes off-screen
-                self.player.bullet.fired = False
 
             if enemy.y > Player.PLAYER_LINE:
-                self.state = "game_over"
                 self.destroy_enemies()
+                self.state = "game_over"
 
     def add_enemy(self):
         self.enemies.append(Enemy())
@@ -212,9 +217,7 @@ while running:
         game.show_game_over()
 
     game.player.draw()
-    if game.player.bullet.fired:
-        game.player.bullet.move()
-        game.player.bullet.draw()
+    game.player.bullet.update()
 
     game.show_score()
     game.show_high_score()
