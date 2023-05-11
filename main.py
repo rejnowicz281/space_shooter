@@ -48,20 +48,20 @@ def get_alien_sprites():
     sprites = {}
     main = Spritesheet(f'graphics/alien/alien{alien_id}_{alien_color}.png')
     if alien_id == 1:
-        sprites["main"] = [main.get_sprite(0, 0, 32, 32, 2), main.get_sprite(32, 0, 32, 32, 2),
-                           main.get_sprite(64, 0, 32, 32, 2),
-                           main.get_sprite(0, 32, 32, 32, 2), main.get_sprite(32, 32, 32, 32, 2),
-                           main.get_sprite(64, 32, 32, 32, 2),
-                           main.get_sprite(0, 64, 32, 32, 2), main.get_sprite(32, 64, 32, 32, 2)]
+        sprites["main"] = [main.get_sprite(0, 0, 32, 32, 2), main.get_sprite(0, 1, 32, 32, 2),
+                           main.get_sprite(0, 2, 32, 32, 2),
+                           main.get_sprite(1, 0, 32, 32, 2), main.get_sprite(1, 1, 32, 32, 2),
+                           main.get_sprite(1, 2, 32, 32, 2),
+                           main.get_sprite(2, 0, 32, 32, 2), main.get_sprite(2, 1, 32, 32, 2)]
     elif alien_id == 2:
-        sprites["main"] = [main.get_sprite(0, 0, 32, 32, 2), main.get_sprite(32, 0, 32, 32, 2),
-                           main.get_sprite(64, 0, 32, 32, 2),
-                           main.get_sprite(0, 32, 32, 32, 2), main.get_sprite(32, 32, 32, 32, 2),
-                           main.get_sprite(64, 32, 32, 32, 2),
-                           main.get_sprite(0, 64, 32, 32, 2)]
+        sprites["main"] = [main.get_sprite(0, 0, 32, 32, 2), main.get_sprite(0, 1, 32, 32, 2),
+                           main.get_sprite(0, 2, 32, 32, 2),
+                           main.get_sprite(1, 0, 32, 32, 2), main.get_sprite(1, 1, 32, 32, 2),
+                           main.get_sprite(1, 2, 32, 32, 2),
+                           main.get_sprite(2, 0, 32, 32, 2)]
     elif alien_id == 3:
-        sprites["main"] = [main.get_sprite(0, 0, 32, 32, 2), main.get_sprite(32, 0, 32, 32, 2),
-                           main.get_sprite(0, 32, 32, 32, 2), main.get_sprite(32, 32, 32, 32, 2)]
+        sprites["main"] = [main.get_sprite(0, 0, 32, 32, 2), main.get_sprite(0, 1, 32, 32, 2),
+                           main.get_sprite(1, 0, 32, 32, 2), main.get_sprite(1, 1, 32, 32, 2)]
 
     return sprites
 
