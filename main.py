@@ -29,50 +29,27 @@ def draw_text(x, y, text, font=main_font, color=(255, 255, 255)):
 
 # Title and Icon
 pygame.display.set_caption("Space Shooter")
-icon = pygame.image.load('graphics/spaceship/ship_blue.png')
+icon = pygame.image.load('graphics/icon.png')
 pygame.display.set_icon(icon)
 
 
-def get_ship_image(color):
-    if "blue" != color != "red": color = random.choice(["red", "blue"])
-    image = pygame.image.load(f"graphics/spaceship/ship_{color}.png").convert_alpha()
-    image = pygame.transform.rotozoom(image, 0, 1.5)
-
-    return image
-
-
-def get_alien_sprites():
-    alien_id = random.randint(1, 3)
-    alien_color = random.choice(["g", "p", "r", "y"])
-
-    sprites = {}
-    main = Spritesheet(f'graphics/alien/alien{alien_id}_{alien_color}.png')
-    if alien_id == 1:
-        sprites["main"] = [main.get_sprite(0, 0, 32, 32, 2), main.get_sprite(0, 1, 32, 32, 2),
-                           main.get_sprite(0, 2, 32, 32, 2),
-                           main.get_sprite(1, 0, 32, 32, 2), main.get_sprite(1, 1, 32, 32, 2),
-                           main.get_sprite(1, 2, 32, 32, 2),
-                           main.get_sprite(2, 0, 32, 32, 2), main.get_sprite(2, 1, 32, 32, 2)]
-    elif alien_id == 2:
-        sprites["main"] = [main.get_sprite(0, 0, 32, 32, 2), main.get_sprite(0, 1, 32, 32, 2),
-                           main.get_sprite(0, 2, 32, 32, 2),
-                           main.get_sprite(1, 0, 32, 32, 2), main.get_sprite(1, 1, 32, 32, 2),
-                           main.get_sprite(1, 2, 32, 32, 2),
-                           main.get_sprite(2, 0, 32, 32, 2)]
-    elif alien_id == 3:
-        sprites["main"] = [main.get_sprite(0, 0, 32, 32, 2), main.get_sprite(0, 1, 32, 32, 2),
-                           main.get_sprite(1, 0, 32, 32, 2), main.get_sprite(1, 1, 32, 32, 2)]
-
-    return sprites
-
-
 class Player(pygame.sprite.Sprite):
-    def __init__(self, x=SCREEN_WIDTH / 2, y=650, ship_color=random.choice(["red", "blue"])):
+    def __init__(self, x=SCREEN_WIDTH / 2, y=650):
         super().__init__()
-        self.image = get_ship_image(ship_color)
+        self.anim_index = 0
+        self.sprites = self.get_ship_sprites()
+        self.image = self.sprites[0]
         self.rect = self.image.get_rect(center=(x, y))
         self.speed = 10
         self.bullet = pygame.sprite.GroupSingle(Bullet())
+
+    @staticmethod
+    def get_ship_sprites():
+        sheet = Spritesheet("graphics/player/ship.png")
+        return [sheet.get_sprite(0, 0, 16, 24, 4), sheet.get_sprite(0, 1, 16, 24, 4), sheet.get_sprite(0, 2, 16, 24, 4),
+                sheet.get_sprite(0, 3, 16, 24, 4), sheet.get_sprite(0, 4, 16, 24, 4),
+                sheet.get_sprite(1, 0, 16, 24, 4), sheet.get_sprite(1, 1, 16, 24, 4), sheet.get_sprite(1, 2, 16, 24, 4),
+                sheet.get_sprite(1, 3, 16, 24, 4), sheet.get_sprite(1, 4, 16, 24, 4)]
 
     def input(self):
         keys = pygame.key.get_pressed()
@@ -94,25 +71,49 @@ class Player(pygame.sprite.Sprite):
         if self.rect.right > SCREEN_WIDTH:
             self.rect.right = SCREEN_WIDTH
 
+    def animate(self):
+        for _ in range(len(self.sprites)):
+            self.anim_index += 0.02
+            if self.anim_index >= len(self.sprites): self.anim_index = 0
+            self.image = self.sprites[int(self.anim_index)]
+
     def update(self):
         self.bullet.update()
-        if not self.bullet.sprite.fired:  # Bullet stays beside ship if it is not fired
-            self.bullet.sprite.rect.center = (self.rect.right - 5, self.rect.centery)
+        if not self.bullet.sprite.fired:  # Bullet stays with ship if it is not fired
+            self.bullet.sprite.rect.center = (self.rect.centerx-5, self.rect.top-15)
         self.bullet.draw(screen)
         self.input()
+        self.animate()
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, bullet_type="ball"):
         super().__init__()
-        self.image = pygame.image.load('graphics/bullet.png').convert_alpha()
+        self.bullet_type = bullet_type
+        self.sprites = self.get_sprites()
+        self.anim_index = 0
+        self.image = self.sprites[self.anim_index]
         self.rect = self.image.get_rect()
         self.speed = 10
         self.fired = False
 
+    def get_sprites(self):
+        sheet = Spritesheet("graphics/bullet.png")
+        if self.bullet_type == "ball":
+            return [sheet.get_sprite(0, 0, 14, 16, 3), sheet.get_sprite(0, 1, 14, 16, 3)]
+        elif self.bullet_type == "flame":
+            return [sheet.get_sprite(1, 0, 14, 16, 3), sheet.get_sprite(1, 1, 14, 16, 3)]
+
+    def animate(self):
+        for _ in range(len(self.sprites)):
+            self.anim_index += 0.025
+            if self.anim_index >= len(self.sprites): self.anim_index = 0
+            self.image = self.sprites[int(self.anim_index)]
+
     def update(self):
         if self.fired and self.rect.bottom > 0:  # If bullet is fired and is not off-screen
             self.move()
+            self.animate()
         else:
             self.fired = False
 
@@ -121,34 +122,45 @@ class Bullet(pygame.sprite.Sprite):
 
     def fire(self):
         self.fired = True
-        mixer.Sound('audio/laser.wav').play()
+        laser = mixer.Sound('audio/laser.wav')
+        laser.play()
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, enemy_type="medium"):
         super().__init__()
+        self.enemy_type = random.choice(["small", "medium", "big"])
+        self.sprites = self.get_sprites()
         self.anim_index = 0
-        self.sprites = get_alien_sprites()
-        self.image = self.sprites["main"][0]
+        self.image = self.sprites[self.anim_index]
         self.rect = self.image.get_rect()
         self.randomize_position()
         self.speed = 3
-        self.alpha = 0
+
+    def get_sprites(self):
+        if self.enemy_type == "small":
+            sheet = Spritesheet("graphics/enemy/enemy-small.png")
+            return [sheet.get_sprite(0, 0, 16, 16, 4), sheet.get_sprite(0, 1, 16, 16, 4)]
+        elif self.enemy_type == "medium":
+            sheet = Spritesheet("graphics/enemy/enemy-medium.png")
+            return [sheet.get_sprite(0, 0, 32, 16, 3), sheet.get_sprite(0, 1, 32, 16, 3)]
+        elif self.enemy_type == "big":
+            sheet = Spritesheet("graphics/enemy/enemy-big.png")
+            return [sheet.get_sprite(0, 0, 32, 32, 3), sheet.get_sprite(0, 1, 32, 32, 3)]
 
     def update(self):
         self.move()
         self.animate()
 
     def animate(self):
-        for _ in range(len(self.sprites["main"])):
+        for _ in range(len(self.sprites)):
             self.anim_index += 0.05
-            if self.anim_index >= len(self.sprites["main"]): self.anim_index = 0
-            self.image = self.sprites["main"][int(self.anim_index)]
+            if self.anim_index >= len(self.sprites): self.anim_index = 0
+            self.image = self.sprites[int(self.anim_index)]
 
     def reset(self):
-        self.sprites = get_alien_sprites()
+        self.sprites = self.get_sprites()
         self.randomize_position()
-        self.alpha = 0
 
     def move(self):
         self.rect.x += self.speed
@@ -158,7 +170,9 @@ class Enemy(pygame.sprite.Sprite):
 
     def explode(self):
         self.reset()
-        mixer.Sound('audio/explosion.wav').play()
+        explosion = mixer.Sound('audio/explosion.wav')
+        explosion.set_volume(0.3)
+        explosion.play()
 
     def randomize_position(self):
         self.rect.centerx = random.randint(self.image.get_width() * 2, SCREEN_WIDTH - (self.image.get_width() * 2))
