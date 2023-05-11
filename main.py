@@ -1,6 +1,5 @@
-import os
 import random
-
+from spritesheet import Spritesheet
 import pygame
 from pygame import mixer
 
@@ -13,117 +12,156 @@ SCREEN_HEIGHT = 700
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Background
-background = pygame.image.load('background.jpg')
+background = pygame.image.load('graphics/background.png').convert()
 
 # Background Music
-mixer.music.load('background.wav')
+mixer.music.load('audio/background.wav')
 mixer.music.play(-1)
 
+main_font = pygame.font.Font('font/dogicapixelbold.ttf', 32)
 
-def draw_text(x, y, text, font=pygame.font.Font('freesansbold.ttf', 32), color=(255, 255, 255)):
+
+def draw_text(x, y, text, font=main_font, color=(255, 255, 255)):
     content = font.render(text, True, color)
-    screen.blit(content, (x, y))
+    content_rect = content.get_rect(center=(x, y))
+    screen.blit(content, content_rect)
 
 
 # Title and Icon
 pygame.display.set_caption("Space Shooter")
-icon = pygame.image.load('icon.png')
+icon = pygame.image.load('graphics/spaceship/ship_blue.png')
 pygame.display.set_icon(icon)
 
 
-class Player:
-    PLAYER_LINE = SCREEN_HEIGHT - 200
+def get_ship_image(color):
+    if "blue" != color != "red": color = random.choice(["red", "blue"])
+    image = pygame.image.load(f"graphics/spaceship/ship_{color}.png").convert_alpha()
+    image = pygame.transform.rotozoom(image, 0, 1.5)
 
-    def __init__(self):
-        self.img = pygame.image.load('spaceship.png')
-        self.x = SCREEN_WIDTH / 2 - self.img.get_width() / 2
-        self.y = self.PLAYER_LINE
+    return image
+
+
+def get_alien_sprites():
+    alien_id = random.randint(1, 3)
+    alien_color = random.choice(["g", "p", "r", "y"])
+
+    sprites = {}
+    main = Spritesheet(f'graphics/alien/alien{alien_id}_{alien_color}.png')
+    if alien_id == 1:
+        sprites["main"] = [main.get_sprite(0, 0, 32, 32, 2), main.get_sprite(32, 0, 32, 32, 2),
+                           main.get_sprite(64, 0, 32, 32, 2),
+                           main.get_sprite(0, 32, 32, 32, 2), main.get_sprite(32, 32, 32, 32, 2),
+                           main.get_sprite(64, 32, 32, 32, 2),
+                           main.get_sprite(0, 64, 32, 32, 2), main.get_sprite(32, 64, 32, 32, 2)]
+    elif alien_id == 2:
+        sprites["main"] = [main.get_sprite(0, 0, 32, 32, 2), main.get_sprite(32, 0, 32, 32, 2),
+                           main.get_sprite(64, 0, 32, 32, 2),
+                           main.get_sprite(0, 32, 32, 32, 2), main.get_sprite(32, 32, 32, 32, 2),
+                           main.get_sprite(64, 32, 32, 32, 2),
+                           main.get_sprite(0, 64, 32, 32, 2)]
+    elif alien_id == 3:
+        sprites["main"] = [main.get_sprite(0, 0, 32, 32, 2), main.get_sprite(32, 0, 32, 32, 2),
+                           main.get_sprite(0, 32, 32, 32, 2), main.get_sprite(32, 32, 32, 32, 2)]
+
+    return sprites
+
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self, x=SCREEN_WIDTH / 2, y=650, ship_color=random.choice(["red", "blue"])):
+        super().__init__()
+        self.image = get_ship_image(ship_color)
+        self.rect = self.image.get_rect(center=(x, y))
         self.speed = 10
-        self.bullet = Bullet()
+        self.bullet = pygame.sprite.GroupSingle(Bullet())
 
-    def draw(self):
-        screen.blit(self.img, (self.x, self.y))
+    def input(self):
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            self.move_left()
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            self.move_right()
+        if keys[pygame.K_SPACE] and not self.bullet.sprite.fired:
+            self.bullet.sprite.fire()
 
     def move_left(self):
-        self.x -= self.speed
-        if self.x < 0:
-            self.x = 0
+        self.rect.x -= self.speed
+        if self.rect.left < 0:
+            self.rect.left = 0
 
     def move_right(self):
-        self.x += self.speed
-        if self.x > SCREEN_WIDTH - self.img.get_width():
-            self.x = SCREEN_WIDTH - self.img.get_width()
+        self.rect.x += self.speed
+        if self.rect.right > SCREEN_WIDTH:
+            self.rect.right = SCREEN_WIDTH
 
-    def shoot_bullet(self):
-        self.bullet.x = self.x + self.img.get_width() / 4
-        self.bullet.y = self.y - self.img.get_height() / 2
-        self.bullet.fired = True
-        mixer.Sound('laser.wav').play()
+    def update(self):
+        self.bullet.update()
+        if not self.bullet.sprite.fired:  # Bullet stays beside ship if it is not fired
+            self.bullet.sprite.rect.center = (self.rect.right - 5, self.rect.centery)
+        self.bullet.draw(screen)
+        self.input()
 
 
-class Bullet:
+class Bullet(pygame.sprite.Sprite):
     def __init__(self):
-        self.img = pygame.image.load('bullet.png')
-        self.x = 0
-        self.y = 0
+        super().__init__()
+        self.image = pygame.image.load('graphics/bullet.png').convert_alpha()
+        self.rect = self.image.get_rect()
         self.speed = 10
         self.fired = False
 
-    def draw(self):
-        screen.blit(self.img, (self.x, self.y))
-
-    def move(self):
-        self.y -= self.speed
-
     def update(self):
-        if self.fired and self.y > -self.img.get_height():  # If bullet is fired and is not off-screen
+        if self.fired and self.rect.bottom > 0:  # If bullet is fired and is not off-screen
             self.move()
-            self.draw()
         else:
             self.fired = False
 
+    def move(self):
+        self.rect.y -= self.speed
 
-class Enemy:
-    FADE_IN_SPEED = 15
+    def fire(self):
+        self.fired = True
+        mixer.Sound('audio/laser.wav').play()
 
+
+class Enemy(pygame.sprite.Sprite):
     def __init__(self):
-        self.img = None
-        self.randomize_image()
-        self.x = 0
-        self.y = 0
+        super().__init__()
+        self.anim_index = 0
+        self.sprites = get_alien_sprites()
+        self.image = self.sprites["main"][0]
+        self.rect = self.image.get_rect()
         self.randomize_position()
-        self.speed = 8
+        self.speed = 3
         self.alpha = 0
 
-    def draw(self):
-        if self.alpha < 255:
-            self.img.set_alpha(self.alpha)
-            self.alpha += self.FADE_IN_SPEED
+    def update(self):
+        self.move()
+        self.animate()
 
-        screen.blit(self.img, (self.x, self.y))
-
-    def move(self):
-        self.x += self.speed
-        if self.x <= 0 or self.x >= SCREEN_WIDTH - self.img.get_width():
-            self.speed *= -1
-            self.y += 100
-
-    def randomize_position(self):
-        self.x = random.randint(self.img.get_width() * 2, SCREEN_WIDTH - (self.img.get_width() * 2))
-        self.y = random.randint(self.img.get_height(), self.img.get_height() * 2)
-
-    def randomize_image(self):
-        enemy_images = os.listdir("Enemies")
-        self.img = pygame.image.load(f"Enemies/{random.choice(enemy_images)}")
+    def animate(self):
+        for _ in range(len(self.sprites["main"])):
+            self.anim_index += 0.05
+            if self.anim_index >= len(self.sprites["main"]): self.anim_index = 0
+            self.image = self.sprites["main"][int(self.anim_index)]
 
     def reset(self):
-        self.randomize_image()
         self.randomize_position()
         self.alpha = 0
+
+    def move(self):
+        self.rect.x += self.speed
+        if self.rect.x < 0 or self.rect.right > SCREEN_WIDTH:
+            self.speed *= -1
+            self.rect.y += 100
 
     def explode(self):
         self.reset()
-        mixer.Sound('explosion.wav').play()
+        mixer.Sound('audio/explosion.wav').play()
+
+    def randomize_position(self):
+        self.rect.centerx = random.randint(self.image.get_width() * 2, SCREEN_WIDTH - (self.image.get_width() * 2))
+        self.rect.centery = random.randint(self.image.get_height(), self.image.get_height() * 2)
 
 
 class Game:
@@ -132,28 +170,48 @@ class Game:
         self.high_score = 0
         self.load_high_score()
         self.score = 0
-        self.player = Player()
-        self.enemies = []
-        [self.add_enemy() for _ in range(5)]
+        self.player = pygame.sprite.GroupSingle(Player())
+        self.enemies = pygame.sprite.Group()
+        [self.add_enemy() for i in range(5)]
 
-    def update_enemies(self):
-        for enemy in self.enemies:
-            enemy.move()
-            enemy.draw()
+    def update(self):
+        self.player.draw(screen)
+        self.player.update()
 
-            if self.player.bullet.fired and \
-                    (enemy.y - 48) < self.player.bullet.y < (enemy.y + 48) and \
-                    (enemy.x - 16) < self.player.bullet.x < (enemy.x + 48):  # Bullet - enemy collision detection
+        self.show_score()
+        self.show_high_score()
+
+        if self.state == "running":
+            self.enemies.draw(screen)
+            self.enemies.update()
+            self.collision_check()
+        elif self.state == "game_over":
+            mixer.music.stop()
+            self.show_game_over()
+
+    def collision_check(self):
+        if self.player.sprite.bullet.sprite.fired:
+            bullet_hit_list = pygame.sprite.spritecollide(self.player.sprite.bullet.sprite, self.enemies, False)
+            for enemy in bullet_hit_list:
                 enemy.explode()
-                self.player.bullet.fired = False
+                self.player.sprite.bullet.sprite.fired = False
                 self.increase_score()
 
-            if enemy.y > Player.PLAYER_LINE:
+        for enemy in self.enemies:
+            if enemy.rect.y > 600:
                 self.destroy_enemies()
                 self.state = "game_over"
 
     def add_enemy(self):
-        self.enemies.append(Enemy())
+        self.enemies.add(Enemy())
+
+    def destroy_enemies(self):
+        self.enemies.empty()
+
+    def increase_score(self):
+        self.score += 1
+        if self.score > self.high_score:
+            self.high_score = self.score
 
     def load_high_score(self):
         try:
@@ -167,22 +225,14 @@ class Game:
             high_score_file.write(str(self.high_score))
 
     def show_score(self):
-        draw_text(10, 50, "Score: " + str(self.score))
+        draw_text(SCREEN_WIDTH / 2, 70, "SCORE: " + str(self.score))
 
     def show_high_score(self):
-        draw_text(10, 10, "High Score: " + str(self.high_score))
+        draw_text(SCREEN_WIDTH / 2, 30, "HIGH SCORE: " + str(self.high_score))
 
     def show_game_over(self):
-        font = pygame.font.Font('freesansbold.ttf', 100)
-        draw_text(50, 310, "GAME OVER", font)
-
-    def increase_score(self):
-        self.score += 1
-        if self.score > self.high_score:
-            self.high_score = self.score
-
-    def destroy_enemies(self):
-        self.enemies = []
+        font = pygame.font.Font('font/dogicapixelbold.ttf', 76)
+        draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "GAME OVER", font)
 
 
 # Game Loop
@@ -200,25 +250,6 @@ while running:
             game.save_high_score()
             running = False
 
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE and not game.player.bullet.fired:
-                game.player.shoot_bullet()
+    game.update()
 
-    keys = pygame.key.get_pressed()
-
-    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-        game.player.move_left()
-    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-        game.player.move_right()
-
-    if game.state == "running":
-        game.update_enemies()
-    elif game.state == "game_over":
-        game.show_game_over()
-
-    game.player.draw()
-    game.player.bullet.update()
-
-    game.show_score()
-    game.show_high_score()
     pygame.display.update()
