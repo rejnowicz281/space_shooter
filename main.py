@@ -41,7 +41,8 @@ class Player(pygame.sprite.Sprite):
         self.image = self.sprites[0]
         self.rect = self.image.get_rect(center=(x, y))
         self.speed = 10
-        self.bullet = pygame.sprite.GroupSingle(Bullet())
+        self.bullets = pygame.sprite.Group(Bullet(), Bullet(), Bullet("flame"))
+        self.bullets_follow_ship()
 
     @staticmethod
     def get_ship_sprites():
@@ -51,6 +52,15 @@ class Player(pygame.sprite.Sprite):
                 sheet.get_sprite(1, 0, 16, 24, 4), sheet.get_sprite(1, 1, 16, 24, 4), sheet.get_sprite(1, 2, 16, 24, 4),
                 sheet.get_sprite(1, 3, 16, 24, 4), sheet.get_sprite(1, 4, 16, 24, 4)]
 
+    def bullets_follow_ship(self):
+        bullet1 = self.bullets.sprites()[0]
+        bullet2 = self.bullets.sprites()[1]
+        bullet3 = self.bullets.sprites()[2]
+
+        if not bullet1.fired: bullet1.rect.center = (self.rect.centerx - 45, self.rect.centery)
+        if not bullet2.fired: bullet2.rect.center = (self.rect.centerx + 35, self.rect.centery)
+        if not bullet3.fired: bullet3.rect.center = (self.rect.centerx - 5, self.rect.centery - 50)
+
     def input(self):
         keys = pygame.key.get_pressed()
 
@@ -58,8 +68,20 @@ class Player(pygame.sprite.Sprite):
             self.move_left()
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             self.move_right()
-        if keys[pygame.K_SPACE] and not self.bullet.sprite.fired:
-            self.bullet.sprite.fire()
+
+    def fire(self):
+        bullet1 = self.bullets.sprites()[0]  # Ball 1
+        bullet2 = self.bullets.sprites()[1]  # Ball 2
+        bullet3 = self.bullets.sprites()[2]  # Flame 1
+
+        if not bullet3.fired:
+            bullet3.fire()
+        elif not bullet1.fired:
+            bullet1.rect.centerx = self.rect.centerx - 5
+            bullet1.fire()
+        elif not bullet2.fired:
+            bullet2.rect.centerx = self.rect.centerx - 5
+            bullet2.fire()
 
     def move_left(self):
         self.rect.x -= self.speed
@@ -78,16 +100,15 @@ class Player(pygame.sprite.Sprite):
             self.image = self.sprites[int(self.anim_index)]
 
     def update(self):
-        self.bullet.update()
-        if not self.bullet.sprite.fired:  # Bullet stays with ship if it is not fired
-            self.bullet.sprite.rect.center = (self.rect.centerx - 5, self.rect.top - 15)
-        self.bullet.draw(screen)
         self.input()
         self.animate()
+        self.bullets_follow_ship()
+        self.bullets.update()
+        self.bullets.draw(screen)
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, x=0, y=0, bullet_type="ball"):
+    def __init__(self, bullet_type="ball", x=0, y=0):
         super().__init__()
         self.bullet_type = bullet_type
         self.sprites = self.get_sprites()
@@ -127,9 +148,9 @@ class Bullet(pygame.sprite.Sprite):
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, x=0, y=0, enemy_type="medium"):
+    def __init__(self, enemy_type="medium", x=0, y=0):
         super().__init__()
-        self.enemy_type = random.choice(["small", "medium", "big"])
+        self.enemy_type = enemy_type
         self.sprites = self.get_sprites()
         self.anim_index = 0
         self.image = self.sprites[self.anim_index]
@@ -189,8 +210,8 @@ class Game:
         [self.add_enemy() for i in range(5)]
 
     def update(self):
-        self.player.draw(screen)
         self.player.update()
+        self.player.draw(screen)
 
         self.show_score()
         self.show_high_score()
@@ -204,11 +225,11 @@ class Game:
             self.show_game_over()
 
     def collision_check(self):
-        if self.player.sprite.bullet.sprite.fired:
-            bullet_hit_list = pygame.sprite.spritecollide(self.player.sprite.bullet.sprite, self.enemies, False)
+        for bullet in self.player.sprite.bullets:
+            bullet_hit_list = pygame.sprite.spritecollide(bullet, self.enemies, False)
             for enemy in bullet_hit_list:
                 enemy.explode()
-                self.player.sprite.bullet.sprite.fired = False
+                bullet.fired = False
                 self.increase_score()
 
         for enemy in self.enemies:
@@ -264,6 +285,8 @@ while running:
         if event.type == pygame.QUIT:
             game.save_high_score()
             running = False
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            game.player.sprite.fire()
 
     game.update()
 
