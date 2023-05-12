@@ -167,8 +167,7 @@ class Enemy(pygame.sprite.Sprite):
 class Game:
     def __init__(self):
         self.state = "running"
-        self.high_score = 0
-        self.load_high_score()
+        self.high_score = self.load_high_score()
         self.score = 0
         self.player = pygame.sprite.GroupSingle(Player())
         self.enemies = pygame.sprite.Group()
@@ -213,12 +212,13 @@ class Game:
         if self.score > self.high_score:
             self.high_score = self.score
 
-    def load_high_score(self):
+    @staticmethod
+    def load_high_score():
         try:
             with open("high_score.txt", "r") as high_score_file:
-                self.high_score = int(high_score_file.read())
+                return int(high_score_file.read())
         except FileNotFoundError:
-            self.high_score = 0
+            return 0
 
     def save_high_score(self):
         with open("high_score.txt", "w") as high_score_file:
