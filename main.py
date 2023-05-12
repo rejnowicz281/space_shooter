@@ -94,10 +94,9 @@ class Player(pygame.sprite.Sprite):
             self.rect.right = SCREEN_WIDTH
 
     def animate(self):
-        for _ in range(len(self.sprites)):
-            self.anim_index += 0.02
-            if self.anim_index >= len(self.sprites): self.anim_index = 0
-            self.image = self.sprites[int(self.anim_index)]
+        self.anim_index += 0.2
+        if self.anim_index >= len(self.sprites): self.anim_index = 0
+        self.image = self.sprites[int(self.anim_index)]
 
     def update(self):
         self.input()
@@ -126,10 +125,9 @@ class Bullet(pygame.sprite.Sprite):
             return [sheet.get_sprite(1, 0, 14, 16, 3), sheet.get_sprite(1, 1, 14, 16, 3)]
 
     def animate(self):
-        for _ in range(len(self.sprites)):
-            self.anim_index += 0.025
-            if self.anim_index >= len(self.sprites): self.anim_index = 0
-            self.image = self.sprites[int(self.anim_index)]
+        self.anim_index += 0.1
+        if self.anim_index >= len(self.sprites): self.anim_index = 0
+        self.image = self.sprites[int(self.anim_index)]
 
     def update(self):
         if self.fired and self.rect.bottom > 0:  # If bullet is fired and is not off-screen
@@ -143,8 +141,8 @@ class Bullet(pygame.sprite.Sprite):
 
     def fire(self):
         self.fired = True
-        laser = mixer.Sound('audio/laser.wav')
-        laser.play()
+        laser_sound = mixer.Sound('audio/laser.wav')
+        laser_sound.play()
 
 
 class Enemy(pygame.sprite.Sprite):
@@ -174,10 +172,9 @@ class Enemy(pygame.sprite.Sprite):
         self.animate()
 
     def animate(self):
-        for _ in range(len(self.sprites)):
-            self.anim_index += 0.05
-            if self.anim_index >= len(self.sprites): self.anim_index = 0
-            self.image = self.sprites[int(self.anim_index)]
+        self.anim_index += 0.1
+        if self.anim_index >= len(self.sprites): self.anim_index = 0
+        self.image = self.sprites[int(self.anim_index)]
 
     def reset(self):
         self.sprites = self.get_sprites()
@@ -191,18 +188,41 @@ class Enemy(pygame.sprite.Sprite):
 
     def explode(self):
         self.reset()
-        explosion = mixer.Sound('audio/explosion.wav')
-        explosion.set_volume(0.3)
-        explosion.play()
+        explosion_sound = mixer.Sound('audio/explosion.wav')
+        explosion_sound.set_volume(0.3)
+        explosion_sound.play()
 
     def randomize_position(self):
         self.rect.centerx = random.randint(self.image.get_width() * 2, SCREEN_WIDTH - (self.image.get_width() * 2))
         self.rect.centery = random.randint(self.image.get_height(), self.image.get_height() * 2)
 
 
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self, x=0, y=0):
+        super().__init__()
+        self.sprites = self.get_sprites()
+        self.anim_index = 0
+        self.image = self.sprites[self.anim_index]
+        self.rect = self.image.get_rect(center=(x, y))
+
+    @staticmethod
+    def get_sprites():
+        sheet = Spritesheet("graphics/explosion.png")
+        return [sheet.get_sprite(0, 0, 16, 16, 4), sheet.get_sprite(0, 1, 16, 16, 4), sheet.get_sprite(0, 2, 16, 16, 4),
+                sheet.get_sprite(0, 3, 16, 16, 4), sheet.get_sprite(0, 4, 16, 16, 4)]
+
+    def update(self):
+        self.anim_index += 0.2
+        if self.anim_index >= len(self.sprites):
+            self.kill()
+        else:
+            self.image = self.sprites[int(self.anim_index)]
+
+
 class Game:
     def __init__(self):
         self.state = "running"
+        self.explosions = pygame.sprite.Group()
         self.high_score = self.load_high_score()
         self.score = 0
         self.player = pygame.sprite.GroupSingle(Player())
@@ -220,6 +240,9 @@ class Game:
             self.enemies.draw(screen)
             self.enemies.update()
             self.collision_check()
+
+            self.explosions.update()
+            self.explosions.draw(screen)
         elif self.state == "game_over":
             mixer.music.stop()
             self.show_game_over()
@@ -228,6 +251,7 @@ class Game:
         for bullet in self.player.sprite.bullets:
             bullet_hit_list = pygame.sprite.spritecollide(bullet, self.enemies, False)
             for enemy in bullet_hit_list:
+                self.explosions.add(pygame.sprite.GroupSingle(Explosion(enemy.rect.centerx, enemy.rect.centery)))
                 enemy.explode()
                 bullet.fired = False
                 self.increase_score()
