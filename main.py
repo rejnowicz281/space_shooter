@@ -80,20 +80,20 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         self.bullet.update()
         if not self.bullet.sprite.fired:  # Bullet stays with ship if it is not fired
-            self.bullet.sprite.rect.center = (self.rect.centerx-5, self.rect.top-15)
+            self.bullet.sprite.rect.center = (self.rect.centerx - 5, self.rect.top - 15)
         self.bullet.draw(screen)
         self.input()
         self.animate()
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, bullet_type="ball"):
+    def __init__(self, x=0, y=0, bullet_type="ball"):
         super().__init__()
         self.bullet_type = bullet_type
         self.sprites = self.get_sprites()
         self.anim_index = 0
         self.image = self.sprites[self.anim_index]
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect(center=(x, y))
         self.speed = 10
         self.fired = False
 
@@ -127,13 +127,13 @@ class Bullet(pygame.sprite.Sprite):
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, enemy_type="medium"):
+    def __init__(self, x=0, y=0, enemy_type="medium"):
         super().__init__()
         self.enemy_type = random.choice(["small", "medium", "big"])
         self.sprites = self.get_sprites()
         self.anim_index = 0
         self.image = self.sprites[self.anim_index]
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect(center=(x, y))
         self.randomize_position()
         self.speed = 3
 
