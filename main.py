@@ -146,6 +146,7 @@ class Enemy(pygame.sprite.Sprite):
             self.image = self.sprites["main"][int(self.anim_index)]
 
     def reset(self):
+        self.sprites = get_alien_sprites()
         self.randomize_position()
         self.alpha = 0
 
