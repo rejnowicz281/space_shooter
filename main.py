@@ -193,8 +193,8 @@ class Enemy(pygame.sprite.Sprite):
         explosion_sound.play()
 
     def randomize_position(self):
-        self.rect.centerx = random.randint(self.image.get_width() * 2, SCREEN_WIDTH - (self.image.get_width() * 2))
-        self.rect.centery = random.randint(self.image.get_height(), self.image.get_height() * 2)
+        self.rect.centerx = random.randint(self.image.get_width(), SCREEN_WIDTH - (self.image.get_width()))
+        self.rect.centery = random.randint(130, 200+self.image.get_height())
 
 
 class Explosion(pygame.sprite.Sprite):
