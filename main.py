@@ -68,6 +68,10 @@ class Player(pygame.sprite.Sprite):
             self.move_left()
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             self.move_right()
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            self.move_up()
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            self.move_down()
 
     def fire(self):
         bullet1 = self.bullets.sprites()[0]  # Ball 1
@@ -92,6 +96,16 @@ class Player(pygame.sprite.Sprite):
         self.rect.x += self.speed
         if self.rect.right > SCREEN_WIDTH:
             self.rect.right = SCREEN_WIDTH
+
+    def move_up(self):
+        self.rect.y -= self.speed
+        if self.rect.top < 0:
+            self.rect.top = 0
+
+    def move_down(self):
+        self.rect.y += self.speed
+        if self.rect.bottom > SCREEN_HEIGHT:
+            self.rect.bottom = SCREEN_HEIGHT
 
     def animate(self):
         self.anim_index += 0.2
@@ -233,19 +247,19 @@ class Game:
         self.player.update()
         self.player.draw(screen)
 
-        self.show_score()
-        self.show_high_score()
-
-        if self.state == "running":
-            self.enemies.draw(screen)
-            self.enemies.update()
-            self.collision_check()
-
-            self.explosions.update()
-            self.explosions.draw(screen)
-        elif self.state == "game_over":
-            mixer.music.stop()
-            self.show_game_over()
+        # self.show_score()
+        # self.show_high_score()
+        #
+        # if self.state == "running":
+        #     # self.enemies.draw(screen)
+        #     # self.enemies.update()
+        #     # self.collision_check()
+        #     #
+        #     # self.explosions.update()
+        #     # self.explosions.draw(screen)
+        # elif self.state == "game_over":
+        #     mixer.music.stop()
+        #     self.show_game_over()
 
     def collision_check(self):
         for bullet in self.player.sprite.bullets:
@@ -256,7 +270,7 @@ class Game:
                 bullet.fired = False
                 self.increase_score()
 
-        for enemy in self.enemies:
+        for enemy in self.enemies:  # Take this above bullet collsion?
             if enemy.rect.bottom >= self.player.sprite.rect.top:
                 self.destroy_enemies()
                 self.state = "game_over"
