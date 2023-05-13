@@ -227,7 +227,7 @@ class Game:
         self.score = 0
         self.player = pygame.sprite.GroupSingle(Player())
         self.enemies = pygame.sprite.Group()
-        [self.add_enemy() for i in range(5)]
+        self.add_enemy(5)
 
     def update(self):
         self.player.update()
@@ -261,8 +261,12 @@ class Game:
                 self.destroy_enemies()
                 self.state = "game_over"
 
-    def add_enemy(self):
-        self.enemies.add(Enemy())
+    def add_enemy(self, amount=1, enemy_type="random"):
+        for _ in range(amount):
+            if enemy_type == "random":
+                self.enemies.add(Enemy(random.choice(["small", "medium", "big"])))
+            else:
+                self.enemies.add(Enemy(enemy_type))
 
     def destroy_enemies(self):
         self.enemies.empty()
