@@ -18,7 +18,7 @@ background = pygame.image.load('graphics/background.png').convert()
 mixer.music.load('audio/background.wav')
 mixer.music.play(-1)
 
-main_font = pygame.font.Font('font/dogicapixelbold.ttf', 32)
+main_font = pygame.font.Font('font/dogicapixelbold.ttf', 20)
 
 
 def draw_text(x, y, text, font=main_font, color=(255, 255, 255)):
