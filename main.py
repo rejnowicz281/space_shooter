@@ -194,7 +194,7 @@ class Enemy(pygame.sprite.Sprite):
 
     def randomize_position(self):
         self.rect.centerx = random.randint(self.image.get_width(), SCREEN_WIDTH - (self.image.get_width()))
-        self.rect.centery = random.randint(130, 200+self.image.get_height())
+        self.rect.centery = random.randint(130, 200 + self.image.get_height())
 
 
 class Explosion(pygame.sprite.Sprite):
@@ -257,7 +257,7 @@ class Game:
                 self.increase_score()
 
         for enemy in self.enemies:
-            if enemy.rect.y > 600:
+            if enemy.rect.bottom >= self.player.sprite.rect.top:
                 self.destroy_enemies()
                 self.state = "game_over"
 
