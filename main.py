@@ -1,3 +1,4 @@
+import math
 import random
 from spritesheet import Spritesheet
 import pygame
@@ -61,9 +62,20 @@ class Player(pygame.sprite.Sprite):
         if not bullet2.fired: bullet2.rect.center = (self.rect.centerx + 35, self.rect.centery)
         if not bullet3.fired: bullet3.rect.center = (self.rect.centerx - 5, self.rect.centery - 50)
 
+    def point_towards_mouse(self):
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        rel_x, rel_y = mouse_x - self.rect.centerx, mouse_y - self.rect.centery
+        angle = (180 / math.pi) * math.atan2(rel_x, rel_y) - 180
+        original_image = self.get_current_image()
+        self.image = pygame.transform.rotate(original_image, angle)
+        self.rect = self.image.get_rect(center=self.rect.center)
+
+    def draw_crosshair(self):
+        pos = pygame.mouse.get_pos()
+        pygame.draw.line(screen, (0, 0, 0), self.rect.center, pos)
+
     def input(self):
         keys = pygame.key.get_pressed()
-
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             self.move_left()
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
@@ -110,11 +122,16 @@ class Player(pygame.sprite.Sprite):
     def animate(self):
         self.anim_index += 0.2
         if self.anim_index >= len(self.sprites): self.anim_index = 0
-        self.image = self.sprites[int(self.anim_index)]
+        self.image = self.get_current_image()
+
+    def get_current_image(self):
+        return self.sprites[int(self.anim_index)]
 
     def update(self):
-        self.input()
         self.animate()
+        self.point_towards_mouse()
+        self.draw_crosshair()
+        self.input()
         self.bullets_follow_ship()
         self.bullets.update()
         self.bullets.draw(screen)
@@ -244,22 +261,22 @@ class Game:
         self.add_enemy(5)
 
     def update(self):
-        self.player.update()
         self.player.draw(screen)
+        self.player.update()
 
-        # self.show_score()
-        # self.show_high_score()
-        #
-        # if self.state == "running":
-        #     # self.enemies.draw(screen)
-        #     # self.enemies.update()
-        #     # self.collision_check()
-        #     #
-        #     # self.explosions.update()
-        #     # self.explosions.draw(screen)
-        # elif self.state == "game_over":
-        #     mixer.music.stop()
-        #     self.show_game_over()
+        self.show_score()
+        self.show_high_score()
+
+        if self.state == "running":
+            self.enemies.draw(screen)
+            self.enemies.update()
+            self.collision_check()
+
+            self.explosions.update()
+            self.explosions.draw(screen)
+        elif self.state == "game_over":
+            mixer.music.stop()
+            self.show_game_over()
 
     def collision_check(self):
         for bullet in self.player.sprite.bullets:
@@ -327,7 +344,8 @@ while running:
         if event.type == pygame.QUIT:
             game.save_high_score()
             running = False
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+        if (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE) or \
+                (event.type == pygame.MOUSEBUTTONDOWN):
             game.player.sprite.fire()
 
     game.update()
