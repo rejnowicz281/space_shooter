@@ -41,9 +41,9 @@ class Player(pygame.sprite.Sprite):
         self.sprites = self.get_ship_sprites()
         self.image = self.sprites[0]
         self.rect = self.image.get_rect(center=(x, y))
+        self.angle = 0
         self.speed = 10
-        self.bullets = pygame.sprite.Group(Bullet(), Bullet(), Bullet("flame"))
-        self.bullets_follow_ship()
+        self.bullets = pygame.sprite.Group()
 
     @staticmethod
     def get_ship_sprites():
@@ -53,22 +53,17 @@ class Player(pygame.sprite.Sprite):
                 sheet.get_sprite(1, 0, 16, 24, 4), sheet.get_sprite(1, 1, 16, 24, 4), sheet.get_sprite(1, 2, 16, 24, 4),
                 sheet.get_sprite(1, 3, 16, 24, 4), sheet.get_sprite(1, 4, 16, 24, 4)]
 
-    def bullets_follow_ship(self):
-        bullet1 = self.bullets.sprites()[0]
-        bullet2 = self.bullets.sprites()[1]
-        bullet3 = self.bullets.sprites()[2]
-
-        if not bullet1.fired: bullet1.rect.center = (self.rect.centerx - 45, self.rect.centery)
-        if not bullet2.fired: bullet2.rect.center = (self.rect.centerx + 35, self.rect.centery)
-        if not bullet3.fired: bullet3.rect.center = (self.rect.centerx - 5, self.rect.centery - 50)
-
     def point_towards_mouse(self):
         mouse_x, mouse_y = pygame.mouse.get_pos()
         rel_x, rel_y = mouse_x - self.rect.centerx, mouse_y - self.rect.centery
-        angle = (180 / math.pi) * math.atan2(rel_x, rel_y) - 180
+        self.angle = math.degrees(math.atan2(-rel_y, rel_x))-90
         original_image = self.get_current_image()
-        self.image = pygame.transform.rotate(original_image, angle)
+        self.image = pygame.transform.rotate(original_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
+
+    def fire(self):
+        bullet_type = random.choice(["ball", "flame"])
+        self.bullets.add(Bullet(bullet_type, self.rect.centerx-5, self.rect.centery, self.angle))
 
     def draw_crosshair(self):
         pos = pygame.mouse.get_pos()
@@ -84,20 +79,6 @@ class Player(pygame.sprite.Sprite):
             self.move_up()
         if keys[pygame.K_DOWN] or keys[pygame.K_s]:
             self.move_down()
-
-    def fire(self):
-        bullet1 = self.bullets.sprites()[0]  # Ball 1
-        bullet2 = self.bullets.sprites()[1]  # Ball 2
-        bullet3 = self.bullets.sprites()[2]  # Flame 1
-
-        if not bullet3.fired:
-            bullet3.fire()
-        elif not bullet1.fired:
-            bullet1.rect.centerx = self.rect.centerx - 5
-            bullet1.fire()
-        elif not bullet2.fired:
-            bullet2.rect.centerx = self.rect.centerx - 5
-            bullet2.fire()
 
     def move_left(self):
         self.rect.x -= self.speed
@@ -132,21 +113,21 @@ class Player(pygame.sprite.Sprite):
         self.point_towards_mouse()
         self.draw_crosshair()
         self.input()
-        self.bullets_follow_ship()
         self.bullets.update()
         self.bullets.draw(screen)
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, bullet_type="ball", x=0, y=0):
+    def __init__(self, bullet_type="ball", x=0, y=0, angle=0):
         super().__init__()
+        self.angle = angle
         self.bullet_type = bullet_type
         self.sprites = self.get_sprites()
         self.anim_index = 0
+        self.speed = 10
         self.image = self.sprites[self.anim_index]
         self.rect = self.image.get_rect(center=(x, y))
-        self.speed = 10
-        self.fired = False
+        mixer.Sound('audio/laser.wav').play()
 
     def get_sprites(self):
         sheet = Spritesheet("graphics/bullet.png")
@@ -160,20 +141,26 @@ class Bullet(pygame.sprite.Sprite):
         if self.anim_index >= len(self.sprites): self.anim_index = 0
         self.image = self.sprites[int(self.anim_index)]
 
+    def rotate_with_angle(self):
+        self.image = pygame.transform.rotate(self.image, self.angle)
+
     def update(self):
-        if self.fired and self.rect.bottom > 0:  # If bullet is fired and is not off-screen
-            self.move()
+        if 0 < self.rect.y < SCREEN_HEIGHT and 0 < self.rect.x < SCREEN_WIDTH:  # If bullet is on screen
             self.animate()
+            self.rotate_with_angle()
+            self.move()
         else:
-            self.fired = False
+            self.kill()
 
     def move(self):
-        self.rect.y -= self.speed
+        x_vel = math.cos(-(self.angle-270)*(2*math.pi/360)) * self.speed
+        y_vel = math.sin(-(self.angle-270)*(2*math.pi/360)) * self.speed
 
-    def fire(self):
-        self.fired = True
-        laser_sound = mixer.Sound('audio/laser.wav')
-        laser_sound.play()
+        self.rect.x += x_vel
+        self.rect.y += y_vel
+
+        self.rect.x = int(self.rect.x)
+        self.rect.y = int(self.rect.y)
 
 
 class Enemy(pygame.sprite.Sprite):
@@ -229,18 +216,18 @@ class Enemy(pygame.sprite.Sprite):
 
 
 class Explosion(pygame.sprite.Sprite):
-    def __init__(self, x=0, y=0):
+    def __init__(self, x=0, y=0, scale=1):
         super().__init__()
+        self.scale = scale
         self.sprites = self.get_sprites()
         self.anim_index = 0
         self.image = self.sprites[self.anim_index]
         self.rect = self.image.get_rect(center=(x, y))
 
-    @staticmethod
-    def get_sprites():
+    def get_sprites(self):
         sheet = Spritesheet("graphics/explosion.png")
-        return [sheet.get_sprite(0, 0, 16, 16, 4), sheet.get_sprite(0, 1, 16, 16, 4), sheet.get_sprite(0, 2, 16, 16, 4),
-                sheet.get_sprite(0, 3, 16, 16, 4), sheet.get_sprite(0, 4, 16, 16, 4)]
+        return [sheet.get_sprite(0, 0, 16, 16, 4*self.scale), sheet.get_sprite(0, 1, 16, 16, 4*self.scale), sheet.get_sprite(0, 2, 16, 16, 4*self.scale),
+                sheet.get_sprite(0, 3, 16, 16, 4*self.scale), sheet.get_sprite(0, 4, 16, 16, 4*self.scale)]
 
     def update(self):
         self.anim_index += 0.2
@@ -261,19 +248,19 @@ class Game:
         self.add_enemy(5)
 
     def update(self):
-        self.player.draw(screen)
         self.player.update()
+        self.player.draw(screen)
 
         self.show_score()
         self.show_high_score()
+
+        self.explosions.update()
+        self.explosions.draw(screen)
 
         if self.state == "running":
             self.enemies.draw(screen)
             self.enemies.update()
             self.collision_check()
-
-            self.explosions.update()
-            self.explosions.draw(screen)
         elif self.state == "game_over":
             mixer.music.stop()
             self.show_game_over()
@@ -284,13 +271,13 @@ class Game:
             for enemy in bullet_hit_list:
                 self.explosions.add(pygame.sprite.GroupSingle(Explosion(enemy.rect.centerx, enemy.rect.centery)))
                 enemy.explode()
-                bullet.fired = False
+                bullet.kill()
                 self.increase_score()
 
-        for enemy in self.enemies:  # Take this above bullet collsion?
-            if enemy.rect.bottom >= self.player.sprite.rect.top:
-                self.destroy_enemies()
-                self.state = "game_over"
+        if pygame.sprite.spritecollide(self.player.sprite, self.enemies, False):
+            self.destroy_enemies()
+            self.explosions.add(pygame.sprite.GroupSingle(Explosion(self.player.sprite.rect.centerx,self.player.sprite.rect.centery, 5)))
+            self.state = "game_over"
 
     def add_enemy(self, amount=1, enemy_type="random"):
         for _ in range(amount):
