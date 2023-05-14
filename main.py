@@ -32,7 +32,7 @@ def draw_text(x, y, text, font=main_font, color=(255, 255, 255)):
 def draw_crosshair():
     pos = pygame.mouse.get_pos()
     cursor_img = pygame.image.load("graphics/crosshair.png").convert_alpha()
-    cursor_img = pygame.transform.scale_by(cursor_img, 0.5)
+    cursor_img = pygame.transform.scale_by(cursor_img, 0.4)
     cursor_img_rect = cursor_img.get_rect(center=pos)
     screen.blit(cursor_img, cursor_img_rect)
 
@@ -269,7 +269,7 @@ class Explosion(pygame.sprite.Sprite):
 
 class Game:
     def __init__(self):
-        self.state = "game_over"
+        self.paused = True
         self.explosions = pygame.sprite.Group()
         self.high_score = self.load_high_score()
         self.score = 0
@@ -281,7 +281,10 @@ class Game:
         self.explosions.update()
         self.explosions.draw(screen)
 
-        if self.state == "running":
+        if self.paused:
+            mixer.music.stop()
+            self.show_menu_screen()
+        else:
             self.player.update()
             self.player.draw(screen)
 
@@ -296,9 +299,6 @@ class Game:
             self.collision_check()
 
             draw_crosshair()
-        elif self.state == "game_over":
-            mixer.music.stop()
-            self.show_game_over_screen()
 
     def collision_check(self):
         for bullet in self.player.sprite.bullets:
@@ -321,7 +321,7 @@ class Game:
             Explosion(self.player.sprite.rect.centerx, self.player.sprite.rect.centery, 10)))
         self.explosion_sound()
         self.save_high_score()
-        self.state = "game_over"
+        self.paused = True
 
     def turn_enemies_towards_player(self):
         player_x, player_y = self.player.sprite.rect.x, self.player.sprite.rect.y
@@ -380,13 +380,18 @@ class Game:
     def show_difficulty(self):
         draw_text(SCREEN_WIDTH / 2, 65, "DIFFICULTY: " + str(self.difficulty))
 
-    def show_game_over_screen(self):
+    def show_menu_screen(self):
         font_big = pygame.font.Font('font/dogicapixelbold.ttf', 120)
         font_smaller = pygame.font.Font('font/dogicapixelbold.ttf', 30)
 
-        draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "GAME OVER", font_big)
-        draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 120, f"YOUR SCORE WAS: {self.score}", font_smaller)
-        draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 120, "PRESS 'SPACE' TO PLAY AGAIN", font_smaller)
+        if self.score > 0:
+            draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "GAME OVER", font_big)
+            draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 120, f"YOUR SCORE WAS: {self.score}", font_smaller)
+        else:
+            draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "SPACE SHOOTER", font_big)
+
+        draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 120,
+                  f"PRESS 'SPACE' TO PLAY {'AGAIN' if self.score > 0 else ''}", font_smaller)
 
     @staticmethod
     def explosion_sound():
@@ -410,14 +415,14 @@ while running:
             game.save_high_score()
             running = False
 
-        if game.state == "running":
-            if (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE) or (event.type == pygame.MOUSEBUTTONDOWN):
-                game.player.sprite.fire()
-        elif game.state == "game_over":
+        if game.paused:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 game.reset()
                 mixer.music.play(-1)
-                game.state = "running"
+                game.paused = False
+        else:
+            if (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE) or (event.type == pygame.MOUSEBUTTONDOWN):
+                game.player.sprite.fire()
 
     game.update()
 
