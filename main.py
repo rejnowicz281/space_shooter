@@ -8,9 +8,9 @@ from pygame import mixer
 pygame.init()
 
 # Create screen
-SCREEN_WIDTH = 700
-SCREEN_HEIGHT = 700
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+SCREEN_WIDTH = screen.get_width()
+SCREEN_HEIGHT = screen.get_height()
 
 # Background
 background = pygame.image.load('graphics/background.png').convert()
@@ -39,7 +39,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self.anim_index = 0
         self.sprites = self.get_ship_sprites()
-        self.image = self.sprites[0]
+        self.image = self.get_current_image()
         self.rect = self.image.get_rect(center=(x, y))
         self.angle = 0
         self.speed = 10
@@ -56,6 +56,22 @@ class Player(pygame.sprite.Sprite):
                 sheet.get_sprite(1, 2, 16, 24, scale),
                 sheet.get_sprite(1, 3, 16, 24, scale), sheet.get_sprite(1, 4, 16, 24, scale)]
 
+    def update(self):
+        self.animate()
+        self.point_towards_mouse()
+        self.draw_crosshair()
+        self.input()
+        self.bullets.update()
+        self.bullets.draw(screen)
+
+    def animate(self):
+        self.anim_index += 0.2
+        if self.anim_index >= len(self.sprites): self.anim_index = 0
+        self.image = self.get_current_image()
+
+    def get_current_image(self):
+        return self.sprites[int(self.anim_index)]
+
     def point_towards_mouse(self):
         mouse_x, mouse_y = pygame.mouse.get_pos()
         rel_x, rel_y = mouse_x - self.rect.centerx, mouse_y - self.rect.centery
@@ -66,7 +82,7 @@ class Player(pygame.sprite.Sprite):
 
     def fire(self):
         bullet_type = random.choice(["ball", "flame"])
-        self.bullets.add(Bullet(bullet_type, self.rect.centerx - 5, self.rect.centery, self.angle))
+        self.bullets.add(Bullet(bullet_type, 15, self.rect.centerx - 5, self.rect.centery, self.angle))
 
     def draw_crosshair(self):
         pos = pygame.mouse.get_pos()
@@ -103,33 +119,17 @@ class Player(pygame.sprite.Sprite):
         if self.rect.bottom > SCREEN_HEIGHT:
             self.rect.bottom = SCREEN_HEIGHT
 
-    def animate(self):
-        self.anim_index += 0.2
-        if self.anim_index >= len(self.sprites): self.anim_index = 0
-        self.image = self.get_current_image()
-
-    def get_current_image(self):
-        return self.sprites[int(self.anim_index)]
-
-    def update(self):
-        self.animate()
-        self.point_towards_mouse()
-        self.draw_crosshair()
-        self.input()
-        self.bullets.update()
-        self.bullets.draw(screen)
-
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, bullet_type="ball", x=0, y=0, angle=0):
+    def __init__(self, bullet_type="ball", speed=15, x=0, y=0, angle=0):
         super().__init__()
-        self.angle = angle
         self.bullet_type = bullet_type
-        self.sprites = self.get_sprites()
         self.anim_index = 0
-        self.speed = 10
-        self.image = self.sprites[self.anim_index]
+        self.sprites = self.get_sprites()
+        self.image = self.get_current_image()
         self.rect = self.image.get_rect(center=(x, y))
+        self.angle = angle
+        self.speed = speed
         mixer.Sound('audio/laser.wav').play()
 
     def get_sprites(self):
@@ -140,14 +140,6 @@ class Bullet(pygame.sprite.Sprite):
         elif self.bullet_type == "flame":
             return [sheet.get_sprite(1, 0, 14, 16, scale), sheet.get_sprite(1, 1, 14, 16, scale)]
 
-    def animate(self):
-        self.anim_index += 0.1
-        if self.anim_index >= len(self.sprites): self.anim_index = 0
-        self.image = self.sprites[int(self.anim_index)]
-
-    def rotate_with_angle(self):
-        self.image = pygame.transform.rotate(self.image, self.angle)
-
     def update(self):
         if 0 < self.rect.y < SCREEN_HEIGHT and 0 < self.rect.x < SCREEN_WIDTH:  # If bullet is on screen
             self.animate()
@@ -155,6 +147,17 @@ class Bullet(pygame.sprite.Sprite):
             self.move()
         else:
             self.kill()
+
+    def animate(self):
+        self.anim_index += 0.1
+        if self.anim_index >= len(self.sprites): self.anim_index = 0
+        self.image = self.get_current_image()
+
+    def get_current_image(self):
+        return self.sprites[int(self.anim_index)]
+
+    def rotate_with_angle(self):
+        self.image = pygame.transform.rotate(self.image, self.angle)
 
     def move(self):
         x_vel = math.cos(-(self.angle - 270) * (2 * math.pi / 360)) * self.speed
@@ -170,12 +173,12 @@ class Bullet(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, enemy_type="medium", x=0, y=0):
         super().__init__()
-        self.angle = 0
         self.enemy_type = enemy_type
-        self.sprites = self.get_sprites()
         self.anim_index = 0
-        self.image = self.sprites[self.anim_index]
+        self.sprites = self.get_sprites()
+        self.image = self.get_current_image()
         self.rect = self.image.get_rect(center=(x, y))
+        self.angle = 0
         self.speed = 4
         self.shoot_delay = self.get_shoot_delay()
         self.bullets = pygame.sprite.Group()
@@ -194,18 +197,6 @@ class Enemy(pygame.sprite.Sprite):
             scale = 2
             return [sheet.get_sprite(0, 0, 32, 32, scale), sheet.get_sprite(0, 1, 32, 32, scale)]
 
-    def fire(self):
-        bullet_type = random.choice(["ball", "flame"])
-        if self.shoot_delay <= 0:
-            self.bullets.add(Bullet(bullet_type, self.rect.centerx - 5, self.rect.centery, self.angle - 180))
-            self.shoot_delay = self.get_shoot_delay()
-        else:
-            self.shoot_delay -= 0.1
-
-    @staticmethod
-    def get_shoot_delay():
-        return random.randint(5, 10)
-
     def update(self):
         self.move()
         self.fire()
@@ -220,6 +211,18 @@ class Enemy(pygame.sprite.Sprite):
 
     def get_current_image(self):
         return self.sprites[int(self.anim_index)]
+
+    def fire(self):
+        bullet_type = random.choice(["ball", "flame"])
+        if self.shoot_delay <= 0:
+            self.bullets.add(Bullet(bullet_type, 10, self.rect.centerx - 5, self.rect.centery, self.angle - 180))
+            self.shoot_delay = self.get_shoot_delay()
+        else:
+            self.shoot_delay -= 0.1
+
+    @staticmethod
+    def get_shoot_delay():
+        return random.randint(5, 10)
 
     def move(self):
         x_vel = math.cos(-(self.angle - 90) * (2 * math.pi / 360)) * self.speed
@@ -261,7 +264,7 @@ class Game:
         self.explosions = pygame.sprite.Group()
         self.high_score = self.load_high_score()
         self.score = 0
-        self.difficulty = 3
+        self.difficulty = 10
         self.player = pygame.sprite.GroupSingle(Player())
         self.enemies = pygame.sprite.Group()
 
