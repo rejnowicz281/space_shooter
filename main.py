@@ -19,7 +19,7 @@ background = pygame.image.load('graphics/background.png').convert()
 mixer.music.load('audio/background.wav')
 mixer.music.play(-1)
 
-main_font = pygame.font.Font('font/dogicapixelbold.ttf', 20)
+main_font = pygame.font.Font('font/dogicapixelbold.ttf', 15)
 
 
 def draw_text(x, y, text, font=main_font, color=(255, 255, 255)):
@@ -35,7 +35,7 @@ pygame.display.set_icon(icon)
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, x=SCREEN_WIDTH / 2, y=650):
+    def __init__(self, x=SCREEN_WIDTH / 2, y=SCREEN_HEIGHT / 2):
         super().__init__()
         self.anim_index = 0
         self.sprites = self.get_ship_sprites()
@@ -48,22 +48,25 @@ class Player(pygame.sprite.Sprite):
     @staticmethod
     def get_ship_sprites():
         sheet = Spritesheet("graphics/player/ship.png")
-        return [sheet.get_sprite(0, 0, 16, 24, 4), sheet.get_sprite(0, 1, 16, 24, 4), sheet.get_sprite(0, 2, 16, 24, 4),
-                sheet.get_sprite(0, 3, 16, 24, 4), sheet.get_sprite(0, 4, 16, 24, 4),
-                sheet.get_sprite(1, 0, 16, 24, 4), sheet.get_sprite(1, 1, 16, 24, 4), sheet.get_sprite(1, 2, 16, 24, 4),
-                sheet.get_sprite(1, 3, 16, 24, 4), sheet.get_sprite(1, 4, 16, 24, 4)]
+        scale = 3
+        return [sheet.get_sprite(0, 0, 16, 24, scale), sheet.get_sprite(0, 1, 16, 24, scale),
+                sheet.get_sprite(0, 2, 16, 24, scale),
+                sheet.get_sprite(0, 3, 16, 24, scale), sheet.get_sprite(0, 4, 16, 24, scale),
+                sheet.get_sprite(1, 0, 16, 24, scale), sheet.get_sprite(1, 1, 16, 24, scale),
+                sheet.get_sprite(1, 2, 16, 24, scale),
+                sheet.get_sprite(1, 3, 16, 24, scale), sheet.get_sprite(1, 4, 16, 24, scale)]
 
     def point_towards_mouse(self):
         mouse_x, mouse_y = pygame.mouse.get_pos()
         rel_x, rel_y = mouse_x - self.rect.centerx, mouse_y - self.rect.centery
-        self.angle = math.degrees(math.atan2(-rel_y, rel_x))-90
+        self.angle = math.degrees(math.atan2(-rel_y, rel_x)) - 90
         original_image = self.get_current_image()
         self.image = pygame.transform.rotate(original_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def fire(self):
         bullet_type = random.choice(["ball", "flame"])
-        self.bullets.add(Bullet(bullet_type, self.rect.centerx-5, self.rect.centery, self.angle))
+        self.bullets.add(Bullet(bullet_type, self.rect.centerx - 5, self.rect.centery, self.angle))
 
     def draw_crosshair(self):
         pos = pygame.mouse.get_pos()
@@ -131,10 +134,11 @@ class Bullet(pygame.sprite.Sprite):
 
     def get_sprites(self):
         sheet = Spritesheet("graphics/bullet.png")
+        scale = 3
         if self.bullet_type == "ball":
-            return [sheet.get_sprite(0, 0, 14, 16, 3), sheet.get_sprite(0, 1, 14, 16, 3)]
+            return [sheet.get_sprite(0, 0, 14, 16, scale), sheet.get_sprite(0, 1, 14, 16, scale)]
         elif self.bullet_type == "flame":
-            return [sheet.get_sprite(1, 0, 14, 16, 3), sheet.get_sprite(1, 1, 14, 16, 3)]
+            return [sheet.get_sprite(1, 0, 14, 16, scale), sheet.get_sprite(1, 1, 14, 16, scale)]
 
     def animate(self):
         self.anim_index += 0.1
@@ -153,8 +157,8 @@ class Bullet(pygame.sprite.Sprite):
             self.kill()
 
     def move(self):
-        x_vel = math.cos(-(self.angle-270)*(2*math.pi/360)) * self.speed
-        y_vel = math.sin(-(self.angle-270)*(2*math.pi/360)) * self.speed
+        x_vel = math.cos(-(self.angle - 270) * (2 * math.pi / 360)) * self.speed
+        y_vel = math.sin(-(self.angle - 270) * (2 * math.pi / 360)) * self.speed
 
         self.rect.x += x_vel
         self.rect.y += y_vel
@@ -166,24 +170,27 @@ class Bullet(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, enemy_type="medium", x=0, y=0):
         super().__init__()
+        self.angle = 0
         self.enemy_type = enemy_type
         self.sprites = self.get_sprites()
         self.anim_index = 0
         self.image = self.sprites[self.anim_index]
         self.rect = self.image.get_rect(center=(x, y))
-        self.randomize_position()
-        self.speed = 3
+        self.speed = 4
 
     def get_sprites(self):
         if self.enemy_type == "small":
             sheet = Spritesheet("graphics/enemy/enemy-small.png")
-            return [sheet.get_sprite(0, 0, 16, 16, 4), sheet.get_sprite(0, 1, 16, 16, 4)]
+            scale = 3
+            return [sheet.get_sprite(0, 0, 16, 16, scale), sheet.get_sprite(0, 1, 16, 16, scale)]
         elif self.enemy_type == "medium":
             sheet = Spritesheet("graphics/enemy/enemy-medium.png")
-            return [sheet.get_sprite(0, 0, 32, 16, 3), sheet.get_sprite(0, 1, 32, 16, 3)]
+            scale = 2
+            return [sheet.get_sprite(0, 0, 32, 16, scale), sheet.get_sprite(0, 1, 32, 16, scale)]
         elif self.enemy_type == "big":
             sheet = Spritesheet("graphics/enemy/enemy-big.png")
-            return [sheet.get_sprite(0, 0, 32, 32, 3), sheet.get_sprite(0, 1, 32, 32, 3)]
+            scale = 2
+            return [sheet.get_sprite(0, 0, 32, 32, scale), sheet.get_sprite(0, 1, 32, 32, scale)]
 
     def update(self):
         self.move()
@@ -192,27 +199,20 @@ class Enemy(pygame.sprite.Sprite):
     def animate(self):
         self.anim_index += 0.1
         if self.anim_index >= len(self.sprites): self.anim_index = 0
-        self.image = self.sprites[int(self.anim_index)]
+        self.image = self.get_current_image()
 
-    def reset(self):
-        self.sprites = self.get_sprites()
-        self.randomize_position()
+    def get_current_image(self):
+        return self.sprites[int(self.anim_index)]
 
     def move(self):
-        self.rect.x += self.speed
-        if self.rect.x < 0 or self.rect.right > SCREEN_WIDTH:
-            self.speed *= -1
-            self.rect.y += 100
+        x_vel = math.cos(-(self.angle - 90) * (2 * math.pi / 360)) * self.speed
+        y_vel = math.sin(-(self.angle - 90) * (2 * math.pi / 360)) * self.speed
 
-    def explode(self):
-        self.reset()
-        explosion_sound = mixer.Sound('audio/explosion.wav')
-        explosion_sound.set_volume(0.3)
-        explosion_sound.play()
+        self.rect.x += x_vel
+        self.rect.y += y_vel
 
-    def randomize_position(self):
-        self.rect.centerx = random.randint(self.image.get_width(), SCREEN_WIDTH - (self.image.get_width()))
-        self.rect.centery = random.randint(130, 200 + self.image.get_height())
+        self.rect.x = int(self.rect.x)
+        self.rect.y = int(self.rect.y)
 
 
 class Explosion(pygame.sprite.Sprite):
@@ -226,8 +226,9 @@ class Explosion(pygame.sprite.Sprite):
 
     def get_sprites(self):
         sheet = Spritesheet("graphics/explosion.png")
-        return [sheet.get_sprite(0, 0, 16, 16, 4*self.scale), sheet.get_sprite(0, 1, 16, 16, 4*self.scale), sheet.get_sprite(0, 2, 16, 16, 4*self.scale),
-                sheet.get_sprite(0, 3, 16, 16, 4*self.scale), sheet.get_sprite(0, 4, 16, 16, 4*self.scale)]
+        return [sheet.get_sprite(0, 0, 16, 16, 4 * self.scale), sheet.get_sprite(0, 1, 16, 16, 4 * self.scale),
+                sheet.get_sprite(0, 2, 16, 16, 4 * self.scale),
+                sheet.get_sprite(0, 3, 16, 16, 4 * self.scale), sheet.get_sprite(0, 4, 16, 16, 4 * self.scale)]
 
     def update(self):
         self.anim_index += 0.2
@@ -243,9 +244,9 @@ class Game:
         self.explosions = pygame.sprite.Group()
         self.high_score = self.load_high_score()
         self.score = 0
+        self.difficulty = 3
         self.player = pygame.sprite.GroupSingle(Player())
         self.enemies = pygame.sprite.Group()
-        self.add_enemy(5)
 
     def update(self):
         self.player.update()
@@ -253,11 +254,14 @@ class Game:
 
         self.show_score()
         self.show_high_score()
+        self.show_difficulty()
 
         self.explosions.update()
         self.explosions.draw(screen)
 
         if self.state == "running":
+            if not self.enemies: self.spawn_enemy(self.difficulty)
+            self.turn_enemies_towards_player()
             self.enemies.draw(screen)
             self.enemies.update()
             self.collision_check()
@@ -267,24 +271,39 @@ class Game:
 
     def collision_check(self):
         for bullet in self.player.sprite.bullets:
-            bullet_hit_list = pygame.sprite.spritecollide(bullet, self.enemies, False)
+            bullet_hit_list = pygame.sprite.spritecollide(bullet, self.enemies, True)
             for enemy in bullet_hit_list:
                 self.explosions.add(pygame.sprite.GroupSingle(Explosion(enemy.rect.centerx, enemy.rect.centery)))
-                enemy.explode()
+                self.explosion_sound()
                 bullet.kill()
                 self.increase_score()
+                self.update_difficulty()
 
         if pygame.sprite.spritecollide(self.player.sprite, self.enemies, False):
             self.destroy_enemies()
-            self.explosions.add(pygame.sprite.GroupSingle(Explosion(self.player.sprite.rect.centerx,self.player.sprite.rect.centery, 5)))
+            self.explosions.add(pygame.sprite.GroupSingle(
+                Explosion(self.player.sprite.rect.centerx, self.player.sprite.rect.centery, 5)))
+            self.explosion_sound()
             self.state = "game_over"
 
-    def add_enemy(self, amount=1, enemy_type="random"):
+    def turn_enemies_towards_player(self):
+        player_x, player_y = self.player.sprite.rect.x, self.player.sprite.rect.y
+        for enemy in self.enemies:
+            rel_x, rel_y = player_x - enemy.rect.centerx, player_y - enemy.rect.centery
+            enemy.angle = math.degrees(math.atan2(-rel_y, rel_x)) - 270
+            original_image = enemy.get_current_image()
+            enemy.image = pygame.transform.rotate(original_image, enemy.angle)
+            enemy.rect = enemy.image.get_rect(center=enemy.rect.center)
+
+    def spawn_enemy(self, amount=1):
         for _ in range(amount):
-            if enemy_type == "random":
-                self.enemies.add(Enemy(random.choice(["small", "medium", "big"])))
-            else:
-                self.enemies.add(Enemy(enemy_type))
+            random_pos_left = -100, random.randint(-100, SCREEN_HEIGHT + 100)
+            random_pos_right = SCREEN_WIDTH + 100, random.randint(-100, SCREEN_HEIGHT + 100)
+            random_pos_top = random.randint(-100, SCREEN_WIDTH + 100), -100
+            random_pos_bottom = random.randint(-100, SCREEN_WIDTH + 100), SCREEN_HEIGHT + 100
+            random_pos = random.choice([random_pos_left, random_pos_right, random_pos_top, random_pos_bottom])
+
+            self.enemies.add(Enemy(random.choice(["small", "medium", "big"]), random_pos[0], random_pos[1]))
 
     def destroy_enemies(self):
         self.enemies.empty()
@@ -293,6 +312,10 @@ class Game:
         self.score += 1
         if self.score > self.high_score:
             self.high_score = self.score
+
+    def update_difficulty(self):
+        if self.score == 10 or self.score == 30 or self.score == 60 or self.score == 100:
+            self.difficulty += 1
 
     @staticmethod
     def load_high_score():
@@ -306,15 +329,25 @@ class Game:
         with open("high_score.txt", "w") as high_score_file:
             high_score_file.write(str(self.high_score))
 
-    def show_score(self):
-        draw_text(SCREEN_WIDTH / 2, 70, "SCORE: " + str(self.score))
-
     def show_high_score(self):
-        draw_text(SCREEN_WIDTH / 2, 30, "HIGH SCORE: " + str(self.high_score))
+        draw_text(SCREEN_WIDTH / 2, 15, "HIGH SCORE: " + str(self.high_score))
 
-    def show_game_over(self):
+    def show_score(self):
+        draw_text(SCREEN_WIDTH / 2, 40, "SCORE: " + str(self.score))
+
+    def show_difficulty(self):
+        draw_text(SCREEN_WIDTH / 2, 65, "DIFFICULTY: " + str(self.difficulty))
+
+    @staticmethod
+    def show_game_over():
         font = pygame.font.Font('font/dogicapixelbold.ttf', 76)
         draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "GAME OVER", font)
+
+    @staticmethod
+    def explosion_sound():
+        explosion_sound = mixer.Sound('audio/explosion.wav')
+        explosion_sound.set_volume(0.3)
+        explosion_sound.play()
 
 
 # Game Loop
