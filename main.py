@@ -11,6 +11,7 @@ pygame.init()
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 SCREEN_WIDTH = screen.get_width()
 SCREEN_HEIGHT = screen.get_height()
+pygame.mouse.set_visible(False)
 
 # Background
 background = pygame.image.load('graphics/background.png').convert()
@@ -26,6 +27,14 @@ def draw_text(x, y, text, font=main_font, color=(255, 255, 255)):
     content = font.render(text, True, color)
     content_rect = content.get_rect(center=(x, y))
     screen.blit(content, content_rect)
+
+
+def draw_crosshair():
+    pos = pygame.mouse.get_pos()
+    cursor_img = pygame.image.load("graphics/crosshair.png").convert_alpha()
+    cursor_img = pygame.transform.scale_by(cursor_img, 0.5)
+    cursor_img_rect = cursor_img.get_rect(center=pos)
+    screen.blit(cursor_img, cursor_img_rect)
 
 
 # Title and Icon
@@ -56,10 +65,14 @@ class Player(pygame.sprite.Sprite):
                 sheet.get_sprite(1, 2, 16, 24, scale),
                 sheet.get_sprite(1, 3, 16, 24, scale), sheet.get_sprite(1, 4, 16, 24, scale)]
 
+    def reset(self):
+        self.rect.x = SCREEN_WIDTH / 2
+        self.rect.y = SCREEN_HEIGHT / 2
+        self.bullets = pygame.sprite.Group()
+
     def update(self):
         self.animate()
         self.point_towards_mouse()
-        self.draw_crosshair()
         self.input()
         self.bullets.update()
         self.bullets.draw(screen)
@@ -83,10 +96,6 @@ class Player(pygame.sprite.Sprite):
     def fire(self):
         bullet_type = "ball"
         self.bullets.add(Bullet(bullet_type, 15, 4, self.rect.centerx - 5, self.rect.centery, self.angle))
-
-    def draw_crosshair(self):
-        pos = pygame.mouse.get_pos()
-        pygame.draw.line(screen, (255, 100, 100), self.rect.center, pos, 3)
 
     def input(self):
         keys = pygame.key.get_pressed()
@@ -260,7 +269,7 @@ class Explosion(pygame.sprite.Sprite):
 
 class Game:
     def __init__(self):
-        self.state = "running"
+        self.state = "game_over"
         self.explosions = pygame.sprite.Group()
         self.high_score = self.load_high_score()
         self.score = 0
@@ -269,31 +278,33 @@ class Game:
         self.enemies = pygame.sprite.Group()
 
     def update(self):
-        self.player.update()
-        self.player.draw(screen)
-
-        self.show_score()
-        self.show_high_score()
-        self.show_difficulty()
-
         self.explosions.update()
         self.explosions.draw(screen)
 
         if self.state == "running":
-            if not self.enemies: self.spawn_enemy(self.difficulty)
+            self.player.update()
+            self.player.draw(screen)
+
+            self.show_score()
+            self.show_high_score()
+            self.show_difficulty()
+
+            if not self.enemies: self.spawn_enemies()
             self.turn_enemies_towards_player()
             self.enemies.draw(screen)
             self.enemies.update()
             self.collision_check()
+
+            draw_crosshair()
         elif self.state == "game_over":
             mixer.music.stop()
-            self.show_game_over()
+            self.show_game_over_screen()
 
     def collision_check(self):
         for bullet in self.player.sprite.bullets:
             bullet_hit_list = pygame.sprite.spritecollide(bullet, self.enemies, True)
             for enemy in bullet_hit_list:
-                self.explosions.add(pygame.sprite.GroupSingle(Explosion(enemy.rect.centerx, enemy.rect.centery,5)))
+                self.explosions.add(pygame.sprite.GroupSingle(Explosion(enemy.rect.centerx, enemy.rect.centery, 5)))
                 self.explosion_sound()
                 bullet.kill()
                 self.increase_score()
@@ -309,6 +320,7 @@ class Game:
         self.explosions.add(pygame.sprite.GroupSingle(
             Explosion(self.player.sprite.rect.centerx, self.player.sprite.rect.centery, 10)))
         self.explosion_sound()
+        self.save_high_score()
         self.state = "game_over"
 
     def turn_enemies_towards_player(self):
@@ -320,8 +332,8 @@ class Game:
             enemy.image = pygame.transform.rotate(original_image, enemy.angle)
             enemy.rect = enemy.image.get_rect(center=enemy.rect.center)
 
-    def spawn_enemy(self, amount=1):
-        for _ in range(amount):
+    def spawn_enemies(self):
+        for _ in range(self.difficulty):
             random_pos_left = -100, random.randint(-100, SCREEN_HEIGHT + 100)
             random_pos_right = SCREEN_WIDTH + 100, random.randint(-100, SCREEN_HEIGHT + 100)
             random_pos_top = random.randint(-100, SCREEN_WIDTH + 100), -100
@@ -329,6 +341,11 @@ class Game:
             random_pos = random.choice([random_pos_left, random_pos_right, random_pos_top, random_pos_bottom])
 
             self.enemies.add(Enemy(random.choice(["small", "medium", "big"]), random_pos[0], random_pos[1]))
+
+    def reset(self):
+        self.score = 0
+        self.difficulty = 10
+        self.player.sprite.reset()
 
     def destroy_enemies(self):
         self.enemies.empty()
@@ -363,10 +380,13 @@ class Game:
     def show_difficulty(self):
         draw_text(SCREEN_WIDTH / 2, 65, "DIFFICULTY: " + str(self.difficulty))
 
-    @staticmethod
-    def show_game_over():
-        font = pygame.font.Font('font/dogicapixelbold.ttf', 76)
-        draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "GAME OVER", font)
+    def show_game_over_screen(self):
+        font_big = pygame.font.Font('font/dogicapixelbold.ttf', 120)
+        font_smaller = pygame.font.Font('font/dogicapixelbold.ttf', 30)
+
+        draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "GAME OVER", font_big)
+        draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 120, f"YOUR SCORE WAS: {self.score}", font_smaller)
+        draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 120, "PRESS 'SPACE' TO PLAY AGAIN", font_smaller)
 
     @staticmethod
     def explosion_sound():
@@ -389,9 +409,15 @@ while running:
         if event.type == pygame.QUIT:
             game.save_high_score()
             running = False
-        if (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE) or \
-                (event.type == pygame.MOUSEBUTTONDOWN):
-            game.player.sprite.fire()
+
+        if game.state == "running":
+            if (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE) or (event.type == pygame.MOUSEBUTTONDOWN):
+                game.player.sprite.fire()
+        elif game.state == "game_over":
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                game.reset()
+                mixer.music.play(-1)
+                game.state = "running"
 
     game.update()
 
