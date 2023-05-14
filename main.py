@@ -59,7 +59,7 @@ class Player(pygame.sprite.Sprite):
     def point_towards_mouse(self):
         mouse_x, mouse_y = pygame.mouse.get_pos()
         rel_x, rel_y = mouse_x - self.rect.centerx, mouse_y - self.rect.centery
-        self.angle = math.degrees(math.atan2(-rel_y, rel_x)) - 90
+        self.angle = math.degrees(math.atan2(rel_x, rel_y)) - 180
         original_image = self.get_current_image()
         self.image = pygame.transform.rotate(original_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
@@ -177,6 +177,8 @@ class Enemy(pygame.sprite.Sprite):
         self.image = self.sprites[self.anim_index]
         self.rect = self.image.get_rect(center=(x, y))
         self.speed = 4
+        self.shoot_delay = self.get_shoot_delay()
+        self.bullets = pygame.sprite.Group()
 
     def get_sprites(self):
         if self.enemy_type == "small":
@@ -192,9 +194,24 @@ class Enemy(pygame.sprite.Sprite):
             scale = 2
             return [sheet.get_sprite(0, 0, 32, 32, scale), sheet.get_sprite(0, 1, 32, 32, scale)]
 
+    def fire(self):
+        bullet_type = random.choice(["ball", "flame"])
+        if self.shoot_delay <= 0:
+            self.bullets.add(Bullet(bullet_type, self.rect.centerx - 5, self.rect.centery, self.angle - 180))
+            self.shoot_delay = self.get_shoot_delay()
+        else:
+            self.shoot_delay -= 0.1
+
+    @staticmethod
+    def get_shoot_delay():
+        return random.randint(5, 10)
+
     def update(self):
         self.move()
+        self.fire()
         self.animate()
+        self.bullets.update()
+        self.bullets.draw(screen)
 
     def animate(self):
         self.anim_index += 0.1
@@ -279,12 +296,17 @@ class Game:
                 self.increase_score()
                 self.update_difficulty()
 
-        if pygame.sprite.spritecollide(self.player.sprite, self.enemies, False):
-            self.destroy_enemies()
-            self.explosions.add(pygame.sprite.GroupSingle(
-                Explosion(self.player.sprite.rect.centerx, self.player.sprite.rect.centery, 5)))
-            self.explosion_sound()
-            self.state = "game_over"
+        if pygame.sprite.spritecollide(self.player.sprite, self.enemies, False): self.make_game_over()
+
+        for enemy in self.enemies:
+            if pygame.sprite.spritecollide(self.player.sprite, enemy.bullets, False): return self.make_game_over()
+
+    def make_game_over(self):
+        self.destroy_enemies()
+        self.explosions.add(pygame.sprite.GroupSingle(
+            Explosion(self.player.sprite.rect.centerx, self.player.sprite.rect.centery, 5)))
+        self.explosion_sound()
+        self.state = "game_over"
 
     def turn_enemies_towards_player(self):
         player_x, player_y = self.player.sprite.rect.x, self.player.sprite.rect.y
