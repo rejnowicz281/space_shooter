@@ -270,6 +270,7 @@ class Explosion(pygame.sprite.Sprite):
 class Game:
     def __init__(self):
         self.paused = True
+        self.started = False
         self.explosions = pygame.sprite.Group()
         self.high_score = self.load_high_score()
         self.score = 0
@@ -384,14 +385,14 @@ class Game:
         font_big = pygame.font.Font('font/dogicapixelbold.ttf', 120)
         font_smaller = pygame.font.Font('font/dogicapixelbold.ttf', 30)
 
-        if self.score > 0:
+        if self.started:
             draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "GAME OVER", font_big)
             draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 120, f"YOUR SCORE WAS: {self.score}", font_smaller)
         else:
             draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "SPACE SHOOTER", font_big)
 
         draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 120,
-                  f"PRESS 'SPACE' TO PLAY {'AGAIN' if self.score > 0 else ''}", font_smaller)
+                  f"PRESS 'SPACE' TO PLAY {'AGAIN' if self.started else ''}", font_smaller)
 
     @staticmethod
     def explosion_sound():
@@ -420,6 +421,7 @@ while running:
                 game.reset()
                 mixer.music.play(-1)
                 game.paused = False
+                game.started = True
         else:
             if (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE) or (event.type == pygame.MOUSEBUTTONDOWN):
                 game.player.sprite.fire()
