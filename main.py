@@ -81,8 +81,8 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def fire(self):
-        bullet_type = random.choice(["ball", "flame"])
-        self.bullets.add(Bullet(bullet_type, 15, self.rect.centerx - 5, self.rect.centery, self.angle))
+        bullet_type = "ball"
+        self.bullets.add(Bullet(bullet_type, 15, 4, self.rect.centerx - 5, self.rect.centery, self.angle))
 
     def draw_crosshair(self):
         pos = pygame.mouse.get_pos()
@@ -121,8 +121,9 @@ class Player(pygame.sprite.Sprite):
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, bullet_type="ball", speed=15, x=0, y=0, angle=0):
+    def __init__(self, bullet_type="ball", speed=15, scale=3, x=0, y=0, angle=0):
         super().__init__()
+        self.scale = scale
         self.bullet_type = bullet_type
         self.anim_index = 0
         self.sprites = self.get_sprites()
@@ -134,11 +135,10 @@ class Bullet(pygame.sprite.Sprite):
 
     def get_sprites(self):
         sheet = Spritesheet("graphics/bullet.png")
-        scale = 3
         if self.bullet_type == "ball":
-            return [sheet.get_sprite(0, 0, 14, 16, scale), sheet.get_sprite(0, 1, 14, 16, scale)]
+            return [sheet.get_sprite(0, 0, 14, 16, self.scale), sheet.get_sprite(0, 1, 14, 16, self.scale)]
         elif self.bullet_type == "flame":
-            return [sheet.get_sprite(1, 0, 14, 16, scale), sheet.get_sprite(1, 1, 14, 16, scale)]
+            return [sheet.get_sprite(1, 0, 14, 16, self.scale), sheet.get_sprite(1, 1, 14, 16, self.scale)]
 
     def update(self):
         if 0 < self.rect.y < SCREEN_HEIGHT and 0 < self.rect.x < SCREEN_WIDTH:  # If bullet is on screen
@@ -213,9 +213,9 @@ class Enemy(pygame.sprite.Sprite):
         return self.sprites[int(self.anim_index)]
 
     def fire(self):
-        bullet_type = random.choice(["ball", "flame"])
+        bullet_type = "flame"
         if self.shoot_delay <= 0:
-            self.bullets.add(Bullet(bullet_type, 10, self.rect.centerx - 5, self.rect.centery, self.angle - 180))
+            self.bullets.add(Bullet(bullet_type, 10, 3, self.rect.centerx - 5, self.rect.centery, self.angle - 180))
             self.shoot_delay = self.get_shoot_delay()
         else:
             self.shoot_delay -= 0.1
@@ -236,7 +236,7 @@ class Enemy(pygame.sprite.Sprite):
 
 
 class Explosion(pygame.sprite.Sprite):
-    def __init__(self, x=0, y=0, scale=1):
+    def __init__(self, x=0, y=0, scale=4):
         super().__init__()
         self.scale = scale
         self.sprites = self.get_sprites()
@@ -246,9 +246,9 @@ class Explosion(pygame.sprite.Sprite):
 
     def get_sprites(self):
         sheet = Spritesheet("graphics/explosion.png")
-        return [sheet.get_sprite(0, 0, 16, 16, 4 * self.scale), sheet.get_sprite(0, 1, 16, 16, 4 * self.scale),
-                sheet.get_sprite(0, 2, 16, 16, 4 * self.scale),
-                sheet.get_sprite(0, 3, 16, 16, 4 * self.scale), sheet.get_sprite(0, 4, 16, 16, 4 * self.scale)]
+        return [sheet.get_sprite(0, 0, 16, 16, self.scale), sheet.get_sprite(0, 1, 16, 16, self.scale),
+                sheet.get_sprite(0, 2, 16, 16, self.scale),
+                sheet.get_sprite(0, 3, 16, 16, self.scale), sheet.get_sprite(0, 4, 16, 16, self.scale)]
 
     def update(self):
         self.anim_index += 0.2
@@ -293,7 +293,7 @@ class Game:
         for bullet in self.player.sprite.bullets:
             bullet_hit_list = pygame.sprite.spritecollide(bullet, self.enemies, True)
             for enemy in bullet_hit_list:
-                self.explosions.add(pygame.sprite.GroupSingle(Explosion(enemy.rect.centerx, enemy.rect.centery)))
+                self.explosions.add(pygame.sprite.GroupSingle(Explosion(enemy.rect.centerx, enemy.rect.centery,5)))
                 self.explosion_sound()
                 bullet.kill()
                 self.increase_score()
@@ -307,7 +307,7 @@ class Game:
     def make_game_over(self):
         self.destroy_enemies()
         self.explosions.add(pygame.sprite.GroupSingle(
-            Explosion(self.player.sprite.rect.centerx, self.player.sprite.rect.centery, 5)))
+            Explosion(self.player.sprite.rect.centerx, self.player.sprite.rect.centery, 10)))
         self.explosion_sound()
         self.state = "game_over"
 
