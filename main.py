@@ -70,7 +70,7 @@ class Player(pygame.sprite.Sprite):
 
     def draw_crosshair(self):
         pos = pygame.mouse.get_pos()
-        pygame.draw.line(screen, (0, 0, 0), self.rect.center, pos)
+        pygame.draw.line(screen, (255, 100, 100), self.rect.center, pos, 3)
 
     def input(self):
         keys = pygame.key.get_pressed()
