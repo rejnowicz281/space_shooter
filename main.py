@@ -289,15 +289,15 @@ class Game:
             self.player.update()
             self.player.draw(screen)
 
-            self.show_score()
-            self.show_high_score()
-            self.show_difficulty()
-
             if not self.enemies: self.spawn_enemies()
             self.turn_enemies_towards_player()
             self.enemies.draw(screen)
             self.enemies.update()
             self.collision_check()
+
+            self.show_score()
+            self.show_high_score()
+            self.show_difficulty()
 
             draw_crosshair()
 
