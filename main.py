@@ -305,7 +305,7 @@ class Game:
         for bullet in self.player.sprite.bullets:
             bullet_hit_list = pygame.sprite.spritecollide(bullet, self.enemies, True)
             for enemy in bullet_hit_list:
-                self.explosions.add(pygame.sprite.GroupSingle(Explosion(enemy.rect.centerx, enemy.rect.centery, 5)))
+                self.explosions.add(Explosion(enemy.rect.centerx, enemy.rect.centery, 5))
                 self.explosion_sound()
                 bullet.kill()
                 self.increase_score()
@@ -318,8 +318,7 @@ class Game:
 
     def make_game_over(self):
         self.destroy_enemies()
-        self.explosions.add(pygame.sprite.GroupSingle(
-            Explosion(self.player.sprite.rect.centerx, self.player.sprite.rect.centery, 10)))
+        self.explosions.add(Explosion(self.player.sprite.rect.centerx, self.player.sprite.rect.centery, 10))
         self.explosion_sound()
         self.save_high_score()
         self.paused = True
