@@ -1,8 +1,10 @@
 import math
 import random
-from spritesheet import Spritesheet
+
 import pygame
 from pygame import mixer
+
+from spritesheet import Spritesheet
 
 # Initialize pygame
 pygame.init()
@@ -14,13 +16,13 @@ SCREEN_HEIGHT = screen.get_height()
 pygame.mouse.set_visible(False)
 
 # Background
-background = pygame.image.load('graphics/background.png').convert()
+background = pygame.image.load("graphics/background.png").convert()
 
 # Background Music
-mixer.music.load('audio/background.wav')
+mixer.music.load("audio/background.wav")
 mixer.music.play(-1)
 
-main_font = pygame.font.Font('font/dogicapixelbold.ttf', 15)
+main_font = pygame.font.Font("font/dogicapixelbold.ttf", 15)
 
 
 def draw_text(x, y, text, font=main_font, color=(255, 255, 255)):
@@ -39,7 +41,7 @@ def draw_crosshair():
 
 # Title and Icon
 pygame.display.set_caption("Space Shooter")
-icon = pygame.image.load('graphics/icon.png')
+icon = pygame.image.load("graphics/icon.png")
 pygame.display.set_icon(icon)
 
 
@@ -58,12 +60,18 @@ class Player(pygame.sprite.Sprite):
     def get_ship_sprites():
         sheet = Spritesheet("graphics/player/ship.png")
         scale = 3
-        return [sheet.get_sprite(0, 0, 16, 24, scale), sheet.get_sprite(0, 1, 16, 24, scale),
-                sheet.get_sprite(0, 2, 16, 24, scale),
-                sheet.get_sprite(0, 3, 16, 24, scale), sheet.get_sprite(0, 4, 16, 24, scale),
-                sheet.get_sprite(1, 0, 16, 24, scale), sheet.get_sprite(1, 1, 16, 24, scale),
-                sheet.get_sprite(1, 2, 16, 24, scale),
-                sheet.get_sprite(1, 3, 16, 24, scale), sheet.get_sprite(1, 4, 16, 24, scale)]
+        return [
+            sheet.get_sprite(0, 0, 16, 24, scale),
+            sheet.get_sprite(0, 1, 16, 24, scale),
+            sheet.get_sprite(0, 2, 16, 24, scale),
+            sheet.get_sprite(0, 3, 16, 24, scale),
+            sheet.get_sprite(0, 4, 16, 24, scale),
+            sheet.get_sprite(1, 0, 16, 24, scale),
+            sheet.get_sprite(1, 1, 16, 24, scale),
+            sheet.get_sprite(1, 2, 16, 24, scale),
+            sheet.get_sprite(1, 3, 16, 24, scale),
+            sheet.get_sprite(1, 4, 16, 24, scale),
+        ]
 
     def reset(self):
         self.rect.x = SCREEN_WIDTH / 2
@@ -79,7 +87,8 @@ class Player(pygame.sprite.Sprite):
 
     def animate(self):
         self.anim_index += 0.2
-        if self.anim_index >= len(self.sprites): self.anim_index = 0
+        if self.anim_index >= len(self.sprites):
+            self.anim_index = 0
         self.image = self.get_current_image()
 
     def get_current_image(self):
@@ -95,7 +104,11 @@ class Player(pygame.sprite.Sprite):
 
     def fire(self):
         bullet_type = "ball"
-        self.bullets.add(Bullet(bullet_type, 15, 4, self.rect.centerx - 5, self.rect.centery, self.angle))
+        self.bullets.add(
+            Bullet(
+                bullet_type, 20, 4, self.rect.centerx - 5, self.rect.centery, self.angle
+            )
+        )
 
     def input(self):
         keys = pygame.key.get_pressed()
@@ -140,17 +153,25 @@ class Bullet(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=(x, y))
         self.angle = angle
         self.speed = speed
-        mixer.Sound('audio/laser.wav').play()
+        mixer.Sound("audio/laser.wav").play()
 
     def get_sprites(self):
         sheet = Spritesheet("graphics/bullet.png")
         if self.bullet_type == "ball":
-            return [sheet.get_sprite(0, 0, 14, 16, self.scale), sheet.get_sprite(0, 1, 14, 16, self.scale)]
+            return [
+                sheet.get_sprite(0, 0, 14, 16, self.scale),
+                sheet.get_sprite(0, 1, 14, 16, self.scale),
+            ]
         elif self.bullet_type == "flame":
-            return [sheet.get_sprite(1, 0, 14, 16, self.scale), sheet.get_sprite(1, 1, 14, 16, self.scale)]
+            return [
+                sheet.get_sprite(1, 0, 14, 16, self.scale),
+                sheet.get_sprite(1, 1, 14, 16, self.scale),
+            ]
 
     def update(self):
-        if 0 < self.rect.y < SCREEN_HEIGHT and 0 < self.rect.x < SCREEN_WIDTH:  # If bullet is on screen
+        if (
+            0 < self.rect.y < SCREEN_HEIGHT and 0 < self.rect.x < SCREEN_WIDTH
+        ):  # If bullet is on screen
             self.animate()
             self.rotate_with_angle()
             self.move()
@@ -159,7 +180,8 @@ class Bullet(pygame.sprite.Sprite):
 
     def animate(self):
         self.anim_index += 0.1
-        if self.anim_index >= len(self.sprites): self.anim_index = 0
+        if self.anim_index >= len(self.sprites):
+            self.anim_index = 0
         self.image = self.get_current_image()
 
     def get_current_image(self):
@@ -196,15 +218,24 @@ class Enemy(pygame.sprite.Sprite):
         if self.enemy_type == "small":
             sheet = Spritesheet("graphics/enemy/enemy-small.png")
             scale = 3
-            return [sheet.get_sprite(0, 0, 16, 16, scale), sheet.get_sprite(0, 1, 16, 16, scale)]
+            return [
+                sheet.get_sprite(0, 0, 16, 16, scale),
+                sheet.get_sprite(0, 1, 16, 16, scale),
+            ]
         elif self.enemy_type == "medium":
             sheet = Spritesheet("graphics/enemy/enemy-medium.png")
             scale = 2
-            return [sheet.get_sprite(0, 0, 32, 16, scale), sheet.get_sprite(0, 1, 32, 16, scale)]
+            return [
+                sheet.get_sprite(0, 0, 32, 16, scale),
+                sheet.get_sprite(0, 1, 32, 16, scale),
+            ]
         elif self.enemy_type == "big":
             sheet = Spritesheet("graphics/enemy/enemy-big.png")
             scale = 2
-            return [sheet.get_sprite(0, 0, 32, 32, scale), sheet.get_sprite(0, 1, 32, 32, scale)]
+            return [
+                sheet.get_sprite(0, 0, 32, 32, scale),
+                sheet.get_sprite(0, 1, 32, 32, scale),
+            ]
 
     def update(self):
         self.move()
@@ -215,7 +246,8 @@ class Enemy(pygame.sprite.Sprite):
 
     def animate(self):
         self.anim_index += 0.1
-        if self.anim_index >= len(self.sprites): self.anim_index = 0
+        if self.anim_index >= len(self.sprites):
+            self.anim_index = 0
         self.image = self.get_current_image()
 
     def get_current_image(self):
@@ -224,7 +256,16 @@ class Enemy(pygame.sprite.Sprite):
     def fire(self):
         bullet_type = "flame"
         if self.shoot_delay <= 0:
-            self.bullets.add(Bullet(bullet_type, 10, 3, self.rect.centerx - 5, self.rect.centery, self.angle - 180))
+            self.bullets.add(
+                Bullet(
+                    bullet_type,
+                    10,
+                    3,
+                    self.rect.centerx - 5,
+                    self.rect.centery,
+                    self.angle - 180,
+                )
+            )
             self.shoot_delay = self.get_shoot_delay()
         else:
             self.shoot_delay -= 0.1
@@ -255,9 +296,13 @@ class Explosion(pygame.sprite.Sprite):
 
     def get_sprites(self):
         sheet = Spritesheet("graphics/explosion.png")
-        return [sheet.get_sprite(0, 0, 16, 16, self.scale), sheet.get_sprite(0, 1, 16, 16, self.scale),
-                sheet.get_sprite(0, 2, 16, 16, self.scale),
-                sheet.get_sprite(0, 3, 16, 16, self.scale), sheet.get_sprite(0, 4, 16, 16, self.scale)]
+        return [
+            sheet.get_sprite(0, 0, 16, 16, self.scale),
+            sheet.get_sprite(0, 1, 16, 16, self.scale),
+            sheet.get_sprite(0, 2, 16, 16, self.scale),
+            sheet.get_sprite(0, 3, 16, 16, self.scale),
+            sheet.get_sprite(0, 4, 16, 16, self.scale),
+        ]
 
     def update(self):
         self.anim_index += 0.2
@@ -289,7 +334,8 @@ class Game:
             self.player.update()
             self.player.draw(screen)
 
-            if not self.enemies: self.spawn_enemies()
+            if not self.enemies:
+                self.spawn_enemies()
             self.turn_enemies_towards_player()
             self.enemies.draw(screen)
             self.enemies.update()
@@ -305,20 +351,28 @@ class Game:
         for bullet in self.player.sprite.bullets:
             bullet_hit_list = pygame.sprite.spritecollide(bullet, self.enemies, True)
             for enemy in bullet_hit_list:
-                self.explosions.add(Explosion(enemy.rect.centerx, enemy.rect.centery, 5))
+                self.explosions.add(
+                    Explosion(enemy.rect.centerx, enemy.rect.centery, 5)
+                )
                 self.explosion_sound()
                 bullet.kill()
                 self.increase_score()
                 self.update_difficulty()
 
-        if pygame.sprite.spritecollide(self.player.sprite, self.enemies, False): self.make_game_over()
+        if pygame.sprite.spritecollide(self.player.sprite, self.enemies, False):
+            self.make_game_over()
 
         for enemy in self.enemies:
-            if pygame.sprite.spritecollide(self.player.sprite, enemy.bullets, False): return self.make_game_over()
+            if pygame.sprite.spritecollide(self.player.sprite, enemy.bullets, False):
+                return self.make_game_over()
 
     def make_game_over(self):
         self.destroy_enemies()
-        self.explosions.add(Explosion(self.player.sprite.rect.centerx, self.player.sprite.rect.centery, 10))
+        self.explosions.add(
+            Explosion(
+                self.player.sprite.rect.centerx, self.player.sprite.rect.centery, 10
+            )
+        )
         self.explosion_sound()
         self.save_high_score()
         self.paused = True
@@ -335,12 +389,25 @@ class Game:
     def spawn_enemies(self):
         for _ in range(self.difficulty):
             random_pos_left = -100, random.randint(-100, SCREEN_HEIGHT + 100)
-            random_pos_right = SCREEN_WIDTH + 100, random.randint(-100, SCREEN_HEIGHT + 100)
+            random_pos_right = SCREEN_WIDTH + 100, random.randint(
+                -100, SCREEN_HEIGHT + 100
+            )
             random_pos_top = random.randint(-100, SCREEN_WIDTH + 100), -100
-            random_pos_bottom = random.randint(-100, SCREEN_WIDTH + 100), SCREEN_HEIGHT + 100
-            random_pos = random.choice([random_pos_left, random_pos_right, random_pos_top, random_pos_bottom])
+            random_pos_bottom = (
+                random.randint(-100, SCREEN_WIDTH + 100),
+                SCREEN_HEIGHT + 100,
+            )
+            random_pos = random.choice(
+                [random_pos_left, random_pos_right, random_pos_top, random_pos_bottom]
+            )
 
-            self.enemies.add(Enemy(random.choice(["small", "medium", "big"]), random_pos[0], random_pos[1]))
+            self.enemies.add(
+                Enemy(
+                    random.choice(["small", "medium", "big"]),
+                    random_pos[0],
+                    random_pos[1],
+                )
+            )
 
     def reset(self):
         self.score = 0
@@ -356,7 +423,12 @@ class Game:
             self.high_score = self.score
 
     def update_difficulty(self):
-        if self.score == 10 or self.score == 30 or self.score == 60 or self.score == 100:
+        if (
+            self.score == 10
+            or self.score == 30
+            or self.score == 60
+            or self.score == 100
+        ):
             self.difficulty += 1
 
     @staticmethod
@@ -381,21 +453,30 @@ class Game:
         draw_text(SCREEN_WIDTH / 2, 65, "DIFFICULTY: " + str(self.difficulty))
 
     def show_menu_screen(self):
-        font_big = pygame.font.Font('font/dogicapixelbold.ttf', 120)
-        font_smaller = pygame.font.Font('font/dogicapixelbold.ttf', 30)
+        font_big = pygame.font.Font("font/dogicapixelbold.ttf", 120)
+        font_smaller = pygame.font.Font("font/dogicapixelbold.ttf", 30)
 
         if self.started:
             draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "GAME OVER", font_big)
-            draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 120, f"YOUR SCORE WAS: {self.score}", font_smaller)
+            draw_text(
+                SCREEN_WIDTH / 2,
+                SCREEN_HEIGHT / 2 - 120,
+                f"YOUR SCORE WAS: {self.score}",
+                font_smaller,
+            )
         else:
             draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "SPACE SHOOTER", font_big)
 
-        draw_text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 120,
-                  f"PRESS 'SPACE' TO PLAY {'AGAIN' if self.started else ''}", font_smaller)
+        draw_text(
+            SCREEN_WIDTH / 2,
+            SCREEN_HEIGHT / 2 + 120,
+            f"PRESS 'SPACE' TO PLAY {'AGAIN' if self.started else ''}",
+            font_smaller,
+        )
 
     @staticmethod
     def explosion_sound():
-        explosion_sound = mixer.Sound('audio/explosion.wav')
+        explosion_sound = mixer.Sound("audio/explosion.wav")
         explosion_sound.set_volume(0.3)
         explosion_sound.play()
 
@@ -422,7 +503,9 @@ while running:
                 game.paused = False
                 game.started = True
         else:
-            if (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE) or (event.type == pygame.MOUSEBUTTONDOWN):
+            if (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE) or (
+                event.type == pygame.MOUSEBUTTONDOWN
+            ):
                 game.player.sprite.fire()
 
     game.update()
